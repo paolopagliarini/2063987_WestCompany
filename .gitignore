@@ -84,3 +84,4 @@ docker-compose.override.yml
 # ======================
 lost+found/
 .Trash-*/
+CLAUDE.md
