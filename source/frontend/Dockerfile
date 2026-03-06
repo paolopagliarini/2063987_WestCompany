@@ -1,9 +1,11 @@
 # Dockerfile
-FROM python:3.12-slim
+FROM node:20-alpine
 
 # Si imposta la directory di lavoro del container.
 WORKDIR /frontend
 
+COPY package*.json ./
+RUN npm install
 COPY . .
 
-CMD []
+CMD ["npm", "run", "dev"]
