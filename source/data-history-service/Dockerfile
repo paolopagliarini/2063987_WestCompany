@@ -17,4 +17,4 @@ COPY src/ .
 ENV PYTHONPATH=/backend
 
 # Si avvia l'applicazione utilizzando uvicorn.
-CMD ["python", "service_1.py"]
+CMD ["python", "data-history-service.py"]

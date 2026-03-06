@@ -309,7 +309,7 @@ Example stack:
 
 ### Backend
 
-* Python
+* Python / Node.js / Java
 * REST APIs
 
 ### Messaging

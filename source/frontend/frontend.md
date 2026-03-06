@@ -1,0 +1,3 @@
+- Visualizzazione real-time sensori
+- Gestione regole via UI
+- Monitoraggio stato sistema

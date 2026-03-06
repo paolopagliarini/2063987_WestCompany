@@ -21,9 +21,9 @@ services:
       timeout: 7s
       retries: 5
 
-  # ActiveMQ
+  # RabbitMQ
   messagging:
-    image: activemq:latest
+    image: rabbitmq:latest
     container_name: messagging
     restart:
     environment:
@@ -39,11 +39,116 @@ services:
       timeout: 2s
       retries: 2
 
-  service_1:
-    build: ./services/service_1
+  ingestion:
+    build: ./ingestion
     env_file:
       - 
-    container_name: service_1
+    container_name: ingestion
+    restart: always
+    environment:
+
+    ports:
+      - 
+    depends_on:
+      database:
+        condition: service_healthy
+      messagging:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD" ]
+      interval: 800s
+      timeout: 100s
+      retries: 8
+
+  automation-engine:
+    build: ./automation-engine
+    env_file:
+      - 
+    container_name: automation-engine
+    restart: always
+    environment:
+
+    ports:
+      - 
+    depends_on:
+      database:
+        condition: service_healthy
+      messagging:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD" ]
+      interval: 800s
+      timeout: 100s
+      retries: 8
+
+  actuator-control-service:
+    build: ./actuator-control-service
+    env_file:
+      - 
+    container_name: actuator-control-service
+    restart: always
+    environment:
+
+    ports:
+      - 
+    depends_on:
+      database:
+        condition: service_healthy
+      messagging:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD" ]
+      interval: 800s
+      timeout: 100s
+      retries: 8
+
+  notification-service:
+    build: ./notification-service
+    env_file:
+      - 
+    container_name: notification-service
+    restart: always
+    environment:
+
+    ports:
+      - 
+    depends_on:
+      database:
+        condition: service_healthy
+      messagging:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD" ]
+      interval: 800s
+      timeout: 100s
+      retries: 8
+
+  data-history-service:
+    build: ./data-history-service
+    env_file:
+      - 
+    container_name: data-history-service
+    restart: always
+    environment:
+
+    ports:
+      - 
+    depends_on:
+      database:
+        condition: service_healthy
+      messagging:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD" ]
+      interval: 800s
+      timeout: 100s
+      retries: 8
+
+  rule-manager-service:
+    build: ./rule-manager-service
+    env_file:
+      - 
+    container_name: rule-manager-service
     restart: always
     environment:
 
@@ -69,5 +174,15 @@ services:
     ports:
       - 
     depends_on:
-      backend:
+      automation-engine:
+        condition: service_healthy
+      ingestion:
+        condition: service_healthy
+      actuator-control-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      data-history-service:
+        condition: service_healthy
+      rule-manager-service:
         condition: service_healthy

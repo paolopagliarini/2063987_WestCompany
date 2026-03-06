@@ -1,0 +1,3 @@
+- Persistenza storica delle letture sensori
+- Query per trend e analytics
+- Time-series aggregation

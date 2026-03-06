@@ -1,0 +1,3 @@
+- CRUD per regole di automazione
+- Gestione configurazione sensori/attuatori
+- Validazione sintassi regole

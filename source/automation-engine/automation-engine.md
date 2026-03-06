@@ -1,0 +1,3 @@
+- Valuta le regole di automazione
+- Sottoscrive eventi dal broker
+- Triggera azioni sugli attuatori

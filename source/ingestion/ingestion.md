@@ -1,0 +1,3 @@
+- Raccoglie dati dai sensori (REST polling, SSE, WebSocket)
+- Normalizza gli eventi in formato standard
+- Pubblica sul message broker

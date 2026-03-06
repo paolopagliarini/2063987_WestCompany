@@ -1,0 +1,3 @@
+- Gestisce comandi agli attuatori
+- Interfaccia con il simulatore IoT (/api/actuators)
+- Stato e logging delle azioni
