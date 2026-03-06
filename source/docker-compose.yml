@@ -17,7 +17,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U mars_user -d mars_habitat" ]
+      test: [ "CMD", "pg_isready -U mars_user -d mars_habitat" ]
       interval: 10s
       timeout: 5s
       retries: 5

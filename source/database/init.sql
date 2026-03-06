@@ -1,8 +1,5 @@
--- Mars Habitat Automation Platform - Database Schema
--- PostgreSQL 16 - Simplified schema focused on rule persistence
-
 -- =====================================================
--- AUTOMATION RULES (Core requirement)
+-- AUTOMATION RULES
 -- =====================================================
 
 CREATE TABLE automation_rules (
