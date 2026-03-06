@@ -1,0 +1,47 @@
+# ======================
+# GENERALE
+# ======================
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# ======================
+# PYTHON (Backend)
+# ======================
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+env/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# ======================
+# NODE / REACT / VITE
+# ======================
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-error.log*
+
+# ======================
+# ENV FILES
+# ======================
+.env
+.env.*
+!.env.example
+
+# ======================
+# IDE
+# ======================
+.vscode/
+.idea/
+
+# ======================
+# DOCKER
+# ======================
+docker-compose.override.yml
