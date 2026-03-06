@@ -1,3 +1,3 @@
 - Avvisi per condizioni critiche (es. temperatura oltre soglia)
-- Canali: WebSocket real-time, email, log
+- Canali: SSE
 - Priorità e alert escalation
