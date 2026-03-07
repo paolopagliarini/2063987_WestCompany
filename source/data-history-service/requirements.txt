@@ -3,4 +3,4 @@ fastapi
 pydantic
 aio-pika
 sqlalchemy
-asyncpg
+asyncpgpip 

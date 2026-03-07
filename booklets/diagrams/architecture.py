@@ -32,18 +32,23 @@ with Diagram(
         broker = Activemq("Event Broker")
     
     with Cluster("Services"):
-        service_a = Docker("Service A")
-        service_b = Docker("Service B")
+        frontend_formatter = Docker("Frontend Formatter")
+        actuator_control_service = Docker("Actuator Control Service")
 
     with Cluster("Frontend"):
         frontend = React("Frontend")
-
-    service_a >> Edge(style="dashed", color="red", constraint="false") >> sim
-    service_b >> Edge(style="dashed", color="red", constraint="false") >> sim
     
     sim >> Edge(color="darkgreen") >> ingestor
-    ingestor >> broker
+    ingestor >> Edge(color='darkgreen', style='dotted') >> sim
+
+    ingestor >> Edge(color='purple') >> broker
+    broker >> Edge(color='purple', style='dotted') >> ingestor
     
-    broker >> service_a
-    broker >> service_b
-    broker >> Edge(color="blue") >> frontend
+    broker >> Edge(color='blue') >> frontend
+
+    broker >> frontend_formatter
+    broker >> actuator_control_service
+
+    frontend_formatter >> Edge(style='dotted') >> broker
+    actuator_control_service >> Edge(style='dotted') >> broker
+    #services >> Edge(color="blue") >> frontend

@@ -85,3 +85,6 @@ docker-compose.override.yml
 lost+found/
 .Trash-*/
 CLAUDE.md
+
+### BOOKLETS AND VARIOUS ASSETS
+booklets/diagrams/asset/*
