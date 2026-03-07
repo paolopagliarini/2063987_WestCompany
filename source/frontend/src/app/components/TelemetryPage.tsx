@@ -8,55 +8,57 @@ export function TelemetryPage() {
 
   return (
     <div>
-      <h2 className="mb-6 text-[20px]">Real-Time Telemetry</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <h2 className="mb-4 text-[20px]">Real-Time Telemetry</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {charts.map((chart, idx) => (
-          <div key={idx} className="bg-white border-2 border-[#333] p-4">
-            <h3 className="mb-3 text-[16px]">{chart.title}</h3>
-            <div className="border-2 border-[#999] p-4 bg-[#f9f9f9] h-[280px] flex flex-col">
-              <div className="text-[11px] text-[#666] mb-2">VALUE ({chart.unit})</div>
+          <div key={idx} className="bg-white border-2 border-[#333] p-3">
+            <h3 className="mb-2 text-[16px]">{chart.title}</h3>
+            <div className="border-2 border-[#999] p-3 bg-[#f9f9f9] h-[180px] flex flex-col">
+              <div className="text-[11px] text-[#666] mb-1">VALUE ({chart.unit})</div>
 
-              <div className="flex-1 relative">
-                <svg className="w-full h-full" viewBox="0 0 350 180" preserveAspectRatio="xMidYMid meet">
+              <div className="flex-1 relative min-h-0">
+                <svg className="w-full h-full" viewBox="0 0 350 140" preserveAspectRatio="none">
                   {/* Grid lines */}
-                  {Array.from({ length: 5 }, (_, i) => (
+                  {Array.from({ length: 4 }, (_, i) => (
                     <line
                       key={`grid-y-${i}`}
-                      x1="40"
-                      y1={20 + i * 30}
-                      x2="330"
-                      y2={20 + i * 30}
+                      x1="50"
+                      y1={15 + i * 25}
+                      x2="340"
+                      y2={15 + i * 25}
                       stroke="#ddd"
                       strokeWidth="1"
-                      strokeDasharray="2,2"
+                      strokeDasharray="3,3"
+                      vectorEffect="non-scaling-stroke"
                     />
                   ))}
 
                   {/* Y-axis */}
-                  <line x1="40" y1="20" x2="40" y2="140" stroke="#333" strokeWidth="2" />
+                  <line x1="50" y1="15" x2="50" y2="105" stroke="#333" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                   
                   {/* X-axis */}
-                  <line x1="40" y1="140" x2="330" y2="140" stroke="#333" strokeWidth="2" />
+                  <line x1="50" y1="105" x2="340" y2="105" stroke="#333" strokeWidth="2" vectorEffect="non-scaling-stroke" />
 
                   {/* Y-axis labels and ticks */}
-                  {Array.from({ length: 5 }, (_, i) => {
-                    const value = chart.maxValue - (i * chart.maxValue / 4);
-                    const y = 20 + i * 30;
+                  {Array.from({ length: 4 }, (_, i) => {
+                    const value = chart.maxValue - (i * chart.maxValue / 3);
+                    const y = 15 + i * 25;
                     return (
                       <g key={`y-tick-${i}`}>
                         <line
-                          x1="38"
+                          x1="47"
                           y1={y}
-                          x2="42"
+                          x2="53"
                           y2={y}
                           stroke="#333"
                           strokeWidth="2"
+                          vectorEffect="non-scaling-stroke"
                         />
                         <text
-                          x="35"
-                          y={y + 4}
+                          x="43"
+                          y={y + 3}
                           textAnchor="end"
-                          className="text-[10px]"
+                          fontSize="10"
                           fill="#666"
                         >
                           {Math.round(value)}
@@ -67,23 +69,24 @@ export function TelemetryPage() {
 
                   {/* X-axis labels and ticks */}
                   {Array.from({ length: 7 }, (_, i) => {
-                    const x = 40 + i * 48.33;
+                    const x = 50 + i * 48.33;
                     const timeLabel = `-${6 - i}m`;
                     return (
                       <g key={`x-tick-${i}`}>
                         <line
                           x1={x}
-                          y1="138"
+                          y1="102"
                           x2={x}
-                          y2="142"
+                          y2="108"
                           stroke="#333"
                           strokeWidth="2"
+                          vectorEffect="non-scaling-stroke"
                         />
                         <text
                           x={x}
-                          y="155"
+                          y="120"
                           textAnchor="middle"
-                          className="text-[10px]"
+                          fontSize="10"
                           fill="#666"
                         >
                           {timeLabel}
@@ -94,15 +97,16 @@ export function TelemetryPage() {
 
                   {/* Data line */}
                   <polyline
-                    points="40,90 88,75 136,85 184,60 232,70 280,50 328,65"
+                    points="50,70 98.33,55 146.66,62 195,45 243.33,52 291.66,38 340,48"
                     fill="none"
                     stroke="#666"
                     strokeWidth="2.5"
+                    vectorEffect="non-scaling-stroke"
                   />
                 </svg>
               </div>
 
-              <div className="text-[11px] text-[#666] mt-2 text-center">TIME (minutes ago)</div>
+              <div className="text-[11px] text-[#666] mt-1 text-center">TIME (minutes ago)</div>
             </div>
           </div>
         ))}
