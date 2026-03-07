@@ -24,21 +24,22 @@ services:
 
   # RabbitMQ
   messagging:
-    image: rabbitmq:latest
+    image: rabbitmq:3-management
     container_name: messagging
-    restart:
+    restart: always
     environment:
-      - 
+      RABBITMQ_DEFAULT_USER: mars_user
+      RABBITMQ_DEFAULT_PASS: mars_password
     ports:
-      - "5672:5672" # AMQP
-      - "15672:15672" # Management U
+      - "5672:5672"  # AMQP
+      - "15672:15672"  # Management UI
     volumes:
-      - 
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: [ "CMD" ]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 30s
-      timeout: 2s
-      retries: 2
+      timeout: 10s
+      retries: 5
 
   ingestion:
     build: ./ingestion
@@ -105,24 +106,24 @@ services:
 
   notification-service:
     build: ./notification-service
-    env_file:
-      - 
     container_name: notification-service
     restart: always
     environment:
-
+      RABBITMQ_URL: amqp://mars_user:mars_password@messagging:5672/
+      EXCHANGE_NAME: mars_events
+      ROUTING_KEY: events.#
+      HOST: 0.0.0.0
+      PORT: 8004
     ports:
-      - 
+      - "8004:8004"
     depends_on:
-      database:
-        condition: service_healthy
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD" ]
-      interval: 800s
-      timeout: 100s
-      retries: 8
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   data-history-service:
     build: ./data-history-service
@@ -187,3 +188,7 @@ services:
         condition: service_healthy
       rule-manager-service:
         condition: service_healthy
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
