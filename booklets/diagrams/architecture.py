@@ -51,4 +51,3 @@ with Diagram(
 
     frontend_formatter >> Edge(style='dotted') >> broker
     actuator_control_service >> Edge(style='dotted') >> broker
-    #services >> Edge(color="blue") >> frontend
