@@ -4,3 +4,4 @@ pydantic
 aio-pika
 sqlalchemy
 asyncpg
+httpx

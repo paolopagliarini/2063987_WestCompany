@@ -43,66 +43,75 @@ services:
 
   ingestion:
     build: ./ingestion
-    env_file:
-      - 
     container_name: ingestion
     restart: always
     environment:
-
+      SIMULATOR_URL: http://host.docker.internal:8080
+      RABBITMQ_URL: amqp://mars_user:mars_password@messagging:5672/
+      EXCHANGE_NAME: mars_events
+      POLL_INTERVAL: 10
+      HOST: 0.0.0.0
+      PORT: 8001
     ports:
-      - 
+      - "8001:8001"
     depends_on:
-      database:
-        condition: service_healthy
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD" ]
-      interval: 800s
-      timeout: 100s
-      retries: 8
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   automation-engine:
     build: ./automation-engine
-    env_file:
-      - 
     container_name: automation-engine
     restart: always
     environment:
-
+      DATABASE_URL: postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat
+      RABBITMQ_URL: amqp://mars_user:mars_password@messagging:5672/
+      EXCHANGE_NAME: mars_events
+      ROUTING_KEY: events.sensor.#
+      RULES_RELOAD_INTERVAL: 30
+      HOST: 0.0.0.0
+      PORT: 8002
     ports:
-      - 
+      - "8002:8002"
     depends_on:
       database:
         condition: service_healthy
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD" ]
-      interval: 800s
-      timeout: 100s
-      retries: 8
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   actuator-control-service:
     build: ./actuator-control-service
-    env_file:
-      - 
     container_name: actuator-control-service
     restart: always
     environment:
-
+      SIMULATOR_URL: http://host.docker.internal:8080
+      DATABASE_URL: postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat
+      RABBITMQ_URL: amqp://mars_user:mars_password@messagging:5672/
+      EXCHANGE_NAME: mars_events
+      COMMAND_ROUTING_KEY: commands.actuator.#
+      HOST: 0.0.0.0
+      PORT: 8005
     ports:
-      - 
+      - "8005:8005"
     depends_on:
       database:
         condition: service_healthy
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD" ]
-      interval: 800s
-      timeout: 100s
-      retries: 8
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   notification-service:
     build: ./notification-service
@@ -127,45 +136,46 @@ services:
 
   data-history-service:
     build: ./data-history-service
-    env_file:
-      - 
     container_name: data-history-service
     restart: always
     environment:
-
+      DATABASE_URL: postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat
+      RABBITMQ_URL: amqp://mars_user:mars_password@messagging:5672/
+      EXCHANGE_NAME: mars_events
+      ROUTING_KEY: events.sensor.#
+      HOST: 0.0.0.0
+      PORT: 8006
     ports:
-      - 
+      - "8006:8006"
     depends_on:
       database:
         condition: service_healthy
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD" ]
-      interval: 800s
-      timeout: 100s
-      retries: 8
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   rule-manager-service:
     build: ./rule-manager-service
-    env_file:
-      - 
     container_name: rule-manager-service
     restart: always
     environment:
-
+      DATABASE_URL: postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat
+      HOST: 0.0.0.0
+      PORT: 8003
     ports:
-      - 
+      - "8003:8003"
     depends_on:
       database:
         condition: service_healthy
-      messagging:
-        condition: service_healthy
     healthcheck:
-      test: [ "CMD" ]
-      interval: 800s
-      timeout: 100s
-      retries: 8
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build: ./frontend
