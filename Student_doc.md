@@ -6,7 +6,6 @@ The system is composed of multiple decoupled microservices communicating through
 
 # USER STORIES:
 
-
 1. As an operator, I want to see the real-time value of all REST sensors on the dashboard, so that I can monitor habitat conditions at a glance.
 2. As an operator, I want to see the real-time telemetry data from streaming topics (solar array, radiation, life support, thermal loop, power bus, airlock), so that I can monitor all critical subsystems.
 3. As an operator, I want the dashboard to update automatically without refreshing the page, so that I always see the current state of the habitat.
@@ -33,7 +32,7 @@ The system is composed of multiple decoupled microservices communicating through
 ## CONTAINER_NAME: database
 
 ### DESCRIPTION: 
-The container that provides the PostgreSQL DB for the system.
+The container that provides the PostgreSQL database for the system.
 
 ### USER STORIES:
 9. As an operator, I want to create an automation rule (IF sensor_name operator value THEN set actuator_name to ON/OFF), so that the system reacts automatically to environmental conditions.
@@ -46,81 +45,53 @@ The container that provides the PostgreSQL DB for the system.
 5433:5432
 
 ### PERSISTENCE EVALUATION
-The data stored in the container are the automation rules, which are persisted in a PostgreSQL database so they survive service restarts.
+The data stored in the container are the automation rules, sensor historical data, and actuator command execution history, which are persisted in a PostgreSQL database through a volume (`postgres_data`) so they survive service restarts.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+The database is connected to the actuator-control-service, the data-history-service, the rule-manager-service and the automation-engine.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
-- TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+#### MICROSERVICE: database
+- TYPE: database
+- DESCRIPTION: The container that provides the PostgreSQL database for the system.
+- PORTS: 5433:5432
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+PostgreSQL is a relational database management system that is used to store and manage data.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+SQL Database used to store data, with persistent volumes mounted.
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
-		
-	| HTTP METHOD | URL | Description | User Stories |
-	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
-
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
-
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
-
-## CONTAINER_NAME: messaging
+## CONTAINER_NAME: messagging
 
 ### DESCRIPTION: 
 The container that provides the RabbitMQ message broker for the system.
 
 ### USER STORIES:
-??
+2. As an operator, I want to see the real-time telemetry data from streaming topics...
+3. As an operator, I want the dashboard to update automatically without refreshing the page...
+14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event...
+16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered...
 
 ### PORTS: 
-15672:15672
+5672:5672 (AMQP)
+15672:15672 (Management UI)
 
 ### PERSISTENCE EVALUATION
-The data stored in the container are the automation rules, which are persisted in a PostgreSQL database so they survive service restarts.
+The configurations and durable queues of RabbitMQ are persisted using the `rabbitmq_data` volume to protect queued events from data loss.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+Connected to all event-driven services: automation-engine, actuator-control-service, notification-service, data-history-service, ingestion.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
-- TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+#### MICROSERVICE: messagging
+- TYPE: message broker
+- DESCRIPTION: RabbitMQ message broker used to route normalized sensor events and actuator commands across the system.
+- PORTS: 5672:5672, 15672:15672
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+RabbitMQ running the Advanced Message Queuing Protocol (AMQP).
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
-
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
-		
-	| HTTP METHOD | URL | Description | User Stories |
-	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
-
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
-
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+Pub/Sub Message Broker using topic exchanges (`mars_events`).
 
 ## CONTAINER_NAME: frontend
 
@@ -128,43 +99,57 @@ The data stored in the container are the automation rules, which are persisted i
 The container that provides the frontend for the system.
 
 ### USER STORIES:
-??
+
+1. As an operator, I want to see the real-time value of all REST sensors on the dashboard, so that I can monitor habitat conditions at a glance.
+2. As an operator, I want to see the real-time telemetry data from streaming topics (solar array, radiation, life support, thermal loop, power bus, airlock), so that I can monitor all critical subsystems.
+3. As an operator, I want the dashboard to update automatically without refreshing the page, so that I always see the current state of the habitat.
+4. As an operator, I want to see the current ON/OFF state of each actuator, so that I know what devices are active in the habitat.
+5. As an operator, I want to manually toggle an actuator ON or OFF from the dashboard, so that I can directly control habitat devices without writing commands.
+6. As an operator, I want to see the status indicator (ok / warning) for each sensor, so that I can immediately identify anomalies.
+7. As an operator, I want to see a habitat health summary (number of warnings, number of active rules, actuator states overview), so that I can assess the overall system status at a glance.
+8. As an operator, I want to see a live time chart of a sensor's values while the page is open, so that I can observe trends over time.
+9. As an operator, I want to create an automation rule (IF sensor_name operator value THEN set actuator_name to ON/OFF), so that the system reacts automatically to environmental conditions.
+10. As an operator, I want to view all existing automation rules in a list, so that I can understand what automations are currently configured.
+11. As an operator, I want to edit an existing automation rule (change threshold, operator, or actuator action), so that I can adjust automations without deleting and recreating them.
+12. As an operator, I want to delete an automation rule, so that I can remove outdated or incorrect automations.
+13. As an operator, I want to enable or disable a rule without deleting it, so that I can temporarily suspend an automation and re-enable it later.
+15. As an operator, I want to see when each actuator was last changed and whether the change was triggered manually or by a rule, so that I can audit the system's activity.
+16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered, so that I am immediately aware of critical environmental changes without having to watch every sensor.
+17. As an operator, I want to see a log of the most recent rule-trigger events (which rule fired, when, and what sensor value caused it), so that I can audit the system's automated behavior.
+18. As an operator, I want to filter the sensor view by category (environmental, power, chemical, physical), so that I can quickly focus on a specific subsystem without scrolling through all sensors.
+19. As an operator, I want to see all individual measurements from multi-metric sensors displayed together (e.g. PM1, PM2.5, PM10 from air_quality_pm25), so that I have complete information from each device in one place.
+20. As an operator, I want to see the connectivity status of each data source (online / offline / degraded), so that I can detect if a sensor or telemetry stream has stopped sending data.
 
 ### PORTS: 
 5173:80
 
 ### PERSISTENCE EVALUATION
-??
+No data is persisted by this container. It acts completely statelessly as a user interface.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+Ingestion, automation-engine, actuator-control-service, notification-service, data-history-service, rule-manager-service.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
-- TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+#### MICROSERVICE: frontend
+- TYPE: frontend
+- DESCRIPTION: React-based web dashboard.
+- PORTS: 5173:80
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+React, TypeScript, styled with Tailwind CSS, utilizing Vite for building.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+Single Page Application (SPA).
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
-		
-	| HTTP METHOD | URL | Description | User Stories |
-	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
-
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
+- PAGES:
 
 	| Name | Description | Related Microservice | User Stories |
 	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+	| Sensors | Sensor Dashboard | ingestion | 1, 6, 18, 19, 20 |
+	| Telemetry | Telemetry Page | ingestion | 2, 3 |
+	| Actuators | Actuators Control | actuator-control-service | 4, 5, 15 |
+	| Rule Builder | Create/Edit Rules | rule-manager-service | 9, 11 |
+	| Rules | Rule List | rule-manager-service | 10, 12, 13 |
+	| Status | System Status | notification-service, automation-engine | 7, 16, 17 |
 
 ## CONTAINER_NAME: actuator-control-service
 
@@ -172,43 +157,44 @@ The container that provides the frontend for the system.
 The container that provides the actuator control service for the system.
 
 ### USER STORIES:
-??
+4. As an operator, I want to see the current ON/OFF state of each actuator...
+5. As an operator, I want to manually toggle an actuator ON or OFF from the dashboard...
+14. As an operator, I want the actuator state to change automatically when a rule condition is triggered...
+15. As an operator, I want to see when each actuator was last changed and whether the change was triggered manually or by a rule...
 
 ### PORTS: 
 8005:8005
 
 ### PERSISTENCE EVALUATION
-??
+The service itself is stateless and maintains an in-memory cache, but logs all commands directly to the PostgreSQL database for persistent history.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+PostgreSQL database, RabbitMQ message broker, IoT Simulator API.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
+#### MICROSERVICE: actuator-control-service
 - TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+- DESCRIPTION: Subscribes to actuator commands from RabbitMQ (published by the automation engine), calls the IoT simulator actuator API, and logs all commands to PostgreSQL. Exposes a REST API for manual actuator control and status inspection.
+- PORTS: 8005:8005
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+Python, FastAPI, aio_pika, asyncpg, httpx.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+Event Consumer and REST API.
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
+- ENDPOINTS:
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
+	| GET | /health | Health check | 7 |
+	| GET | /actuators | Cached actuator states | 4 |
+	| GET | /actuators/{actuator_id} | State of specific actuator | 4 |
+	| POST | /actuators/{actuator_id} | Manually control actuator | 5 |
+	| GET | /actuators/{actuator_id}/history | Command history | 15 |
 
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
+- DB STRUCTURE:
 
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+	**_actuator_commands_** :	| **_id_** | actuator_id, previous_state, new_state, source, reason, rule_id, executed_at
 
 ## CONTAINER_NAME: automation-engine
 
@@ -216,43 +202,35 @@ The container that provides the actuator control service for the system.
 The container that provides the automation engine for the system.
 
 ### USER STORIES:
-??
+14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event...
 
 ### PORTS: 
 8002:8002
 
 ### PERSISTENCE EVALUATION
-??
+Stateless component. It caches rules in memory but loads them from the PostgreSQL database on startup and at interval reloads.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+PostgreSQL database, RabbitMQ message broker.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
+#### MICROSERVICE: automation-engine
 - TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+- DESCRIPTION: Subscribes to normalized sensor events from RabbitMQ, evaluates automation rules loaded from PostgreSQL, and publishes actuator commands when conditions are met.
+- PORTS: 8002:8002
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+Python, FastAPI, aio_pika, asyncpg.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+Event Consumer and Publisher via RabbitMQ.
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
+- ENDPOINTS:
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
-
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
-
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+	| GET | /health | Health check | 7 |
+	| GET | /rules/active | Return active rules cached | 10 |
+	| POST | /rules/reload | Force reload rules from DB | - |
 
 ## CONTAINER_NAME: data-history-service
 
@@ -260,43 +238,41 @@ The container that provides the automation engine for the system.
 The container that provides the data history service for the system.
 
 ### USER STORIES:
-??
+8. As an operator, I want to see a live time chart of a sensor's values while the page is open, so that I can observe trends over time.
 
 ### PORTS: 
 8006:8006
 
 ### PERSISTENCE EVALUATION
-??
+Acts as the writer to persist data: it stores normalized sensor events into the PostgreSQL database.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+PostgreSQL database, RabbitMQ message broker.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
+#### MICROSERVICE: data-history-service
 - TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+- DESCRIPTION: Subscribes to normalized sensor events from RabbitMQ and persists them to the PostgreSQL database. Exposes a REST API for querying historical readings with filtering, pagination, and aggregation.
+- PORTS: 8006:8006
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+Python, FastAPI, aio_pika, asyncpg.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+Event Consumer and API Server.
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
+- ENDPOINTS:
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
+	| GET | /health | Health check | 7 |
+	| GET | /history | Query historical readings | 8 |
+	| GET | /history/{sensor_id} | History for specific sensor | 8 |
+	| GET | /history/{sensor_id}/aggregate | Aggregated readings | 8 |
+	| GET | /sensors | List sensors with history | 8 |
 
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
+- DB STRUCTURE:
 
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+	**_sensor_readings_** :	| **_id_** | sensor_id, value, unit, source, recorded_at, created_at
 
 ## CONTAINER_NAME: ingestion
 
@@ -304,43 +280,38 @@ The container that provides the data history service for the system.
 The container that provides the ingestion service for the system.
 
 ### USER STORIES:
-??
+1. As an operator, I want to see the real-time value of all REST sensors on the dashboard...
+2. As an operator, I want to see the real-time telemetry data from streaming topics...
+19. As an operator, I want to see all individual measurements from multi-metric sensors displayed together...
+20. As an operator, I want to see the connectivity status of each data source...
 
 ### PORTS: 
 8001:8001
 
 ### PERSISTENCE EVALUATION
-??
+Fully stateless, relies only on temporary in-memory caching to serve the latest states quickly.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+RabbitMQ message broker, IoT Simulator API & SSE Streams.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
+#### MICROSERVICE: ingestion
 - TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+- DESCRIPTION: Polls REST sensors, subscribes to SSE telemetry streams, normalizes all payloads into the unified internal event schema, and publishes them to RabbitMQ.
+- PORTS: 8001:8001
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+Python, FastAPI, aio_pika, httpx.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+REST Poller, SSE Subscriber, and Event Publisher.
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
+- ENDPOINTS:
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
-
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
-
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+	| GET | /health | Health check | 7 |
+	| GET | /sensors/latest | Return all latest cached sensor readings | 1, 19, 20 |
+	| GET | /sensors/latest/{sensor_id} | Return latest reading for a sensor | 1, 19 |
 
 ## CONTAINER_NAME: notification-service
 
@@ -348,43 +319,37 @@ The container that provides the ingestion service for the system.
 The container that provides the notification service for the system.
 
 ### USER STORIES:
-??
+16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered...
+17. As an operator, I want to see a log of the most recent rule-trigger events...
 
 ### PORTS: 
 8004:8004
 
 ### PERSISTENCE EVALUATION
-??
+Caches the last 100 notifications in-memory only. No long-term persistence implemented directly here.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+RabbitMQ message broker.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
+#### MICROSERVICE: notification-service
 - TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+- DESCRIPTION: Receives events from RabbitMQ and pushes notifications to clients via SSE. Stores recent notifications in-memory for new client connections.
+- PORTS: 8004:8004
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+Python, FastAPI, aio_pika.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+Event Consumer and Server-Sent Events (SSE) server.
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
+- ENDPOINTS:
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
-
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
-
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+	| GET | /health | Health check | 7 |
+	| GET | /notifications | Get recent notifications | 17 |
+	| GET | /notifications/stream | SSE endpoint for real-time notifications | 16 |
+	| GET | /notifications/stats | Get notification statistics | 7 |
 
 ## CONTAINER_NAME: rule-manager-service
 
@@ -392,40 +357,44 @@ The container that provides the notification service for the system.
 The container that provides the rule manager service for the system.
 
 ### USER STORIES:
-??
+9. As an operator, I want to create an automation rule...
+10. As an operator, I want to view all existing automation rules in a list...
+11. As an operator, I want to edit an existing automation rule...
+12. As an operator, I want to delete an automation rule...
+13. As an operator, I want to enable or disable a rule without deleting it...
 
 ### PORTS: 
 8003:8003
 
 ### PERSISTENCE EVALUATION
-??
+Does not persist data locally. Defers state mutation entirely to the PostgreSQL database.
 
 ### EXTERNAL SERVICES CONNECTIONS
-???
+PostgreSQL database.
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: <name of the microservice>
+#### MICROSERVICE: rule-manager-service
 - TYPE: backend
-- DESCRIPTION: <description of the microservice>
-- PORTS: <ports to be published by the microservice>
+- DESCRIPTION: CRUD API for automation rules stored in PostgreSQL. Provides endpoints to create, read, update, delete, and toggle rules.
+- PORTS: 8003:8003
 - TECHNOLOGICAL SPECIFICATION:
-<description of the technological aspect of the microservice>
+Python, FastAPI, SQLAlchemy ORM, asyncpg.
 - SERVICE ARCHITECTURE: 
-<description of the architecture of the microservice>
+REST API layer.
 
-- ENDPOINTS: <put this bullet point only in the case of backend and fill the following table>
+- ENDPOINTS:
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | ... | ... | ... | ... |
+	| GET | /health | Health check | 7 |
+	| GET | /rules | Get all rules | 10 |
+	| GET | /rules/{rule_id} | Get specific rule | 10 |
+	| POST | /rules | Create a rule | 9 |
+	| PUT | /rules/{rule_id} | Update a rule | 11 |
+	| DELETE | /rules/{rule_id} | Delete a rule | 12 |
+	| PATCH | /rules/{rule_id}/toggle | Toggle rule status | 13 |
 
-- PAGES: <put this bullet point only in the case of frontend and fill the following table>
+- DB STRUCTURE:
 
-	| Name | Description | Related Microservice | User Stories |
-	| ---- | ----------- | -------------------- | ------------ |
-	| ... | ... | ... | ... |
-
-- DB STRUCTURE: <put this bullet point only in the case a DB is used in the microservice and specify the structure of the tables and columns>
-
-	**_<name of the table>_** :	| **_id_** | <other columns>
+	**_automation_rules_** :	| **_id_** | name, description, sensor_id, operator, threshold_value, threshold_unit, actuator_id, actuator_action, is_active, created_at, updated_at
