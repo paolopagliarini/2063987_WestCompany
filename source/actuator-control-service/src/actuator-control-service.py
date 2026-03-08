@@ -135,6 +135,11 @@ async def execute_command(actuator_id: str, action: str, source: str,
     """Execute an actuator command: call the API, update cache, log to DB."""
     previous_state = actuator_states.get(actuator_id, {}).get("state")
 
+    # Skip if the state is already the requested action
+    if previous_state == action:
+        logger.info(f"Actuator {actuator_id} is already in state '{action}'. Skipping command.")
+        return True
+
     success = await call_actuator_api(actuator_id, action)
 
     if success:
