@@ -148,7 +148,37 @@ Polling services retrieve the sensor values and convert them into normalized eve
 ---
 
 ## Telemetry Streams (Push)
-
+Streams can be consumed either via SSE (server sent events) or WebSocket. Use the following
+endpoints to subscribe to a topic:
+GET /api/telemetry/stream/{topic}
+WS /api/telemetry/ws?topic={topic}
+The following table maps each topic to its schema family:
+Topic Schema
+mars/telemetry/solar_array topic.power.v1
+mars/telemetry/radiation topic.environment.v1
+mars/telemetry/life_support topic.environment.v1Streams can be consumed either via SSE (server sent events) or WebSocket. Use the following
+endpoints to subscribe to a topic:
+GET /api/telemetry/stream/{topic}
+WS /api/telemetry/ws?topic={topic}
+The following table maps each topic to its schema family:
+Topic Schema
+mars/telemetry/solar_array topic.power.v1
+mars/telemetry/radiation topic.environment.v1
+mars/telemetry/life_support topic.environment.v1
+mars/telemetry/thermal_loop topic.thermal_loop.v1
+mars/telemetry/power_bus topic.power.v1
+mars/telemetry/power_consumption topic.power.v1
+mars/telemetry/airlock topic.airlock.v1
+Default publish interval: 5 seconds.
+3.4 Actuator APIs
+Actuator state can be inspected via the actuators 
+mars/telemetry/thermal_loop topic.thermal_loop.v1
+mars/telemetry/power_bus topic.power.v1
+mars/telemetry/power_consumption topic.power.v1
+mars/telemetry/airlock topic.airlock.v1
+Default publish interval: 5 seconds.
+3.4 Actuator APIs
+Actuator state can be inspected via the actuators 
 Some devices publish telemetry periodically through streaming channels.
 
 Examples of topics:
