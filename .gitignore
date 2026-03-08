@@ -84,6 +84,11 @@ docker-compose.override.yml
 # ======================
 lost+found/
 .Trash-*/
+
+# ======================
+# CLAUDE
+# ======================
+.claude
 CLAUDE.md
 
 ### BOOKLETS AND VARIOUS ASSETS
