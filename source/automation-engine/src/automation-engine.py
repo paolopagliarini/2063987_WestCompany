@@ -169,9 +169,15 @@ async def process_event(message: AbstractIncomingMessage):
             await message.ack()
             return
 
+        event_metric = event.get("metric")
+
         # Evaluate matching rules
         async with rules_lock:
-            matching_rules = [r for r in rules_cache if r["sensor_id"] == event_sensor_id]
+            combined_id = f"{event_sensor_id}_{event_metric}" if event_metric else event_sensor_id
+            matching_rules = [
+                r for r in rules_cache 
+                if r["sensor_id"] == event_sensor_id or r["sensor_id"] == combined_id
+            ]
 
         for rule in matching_rules:
             stats["rules_evaluated"] += 1

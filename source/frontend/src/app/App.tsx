@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { SensorDashboard } from './components/SensorDashboard';
 import { TelemetryPage } from './components/TelemetryPage';
@@ -17,8 +17,14 @@ const tabs = [
 ];
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<string>('sensors');
+  const [currentPage, setCurrentPage] = useState<string>(() => {
+    return localStorage.getItem('currentPage') || 'sensors';
+  });
   const [editingRule, setEditingRule] = useState<any | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage);
+  }, [currentPage]);
 
   const handleEditRule = (rule: any) => {
     setEditingRule(rule);
@@ -70,11 +76,10 @@ export default function App() {
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                currentPage === tab.id
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${currentPage === tab.id
                   ? 'bg-primary text-primary-foreground'
                   : 'hover:bg-muted'
-              }`}
+                }`}
             >
               {tab.label}
             </button>

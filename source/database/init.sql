@@ -44,7 +44,7 @@ CREATE TABLE actuator_commands (
     new_state VARCHAR(20) NOT NULL,
     source VARCHAR(50),
     reason TEXT,
-    rule_id INTEGER REFERENCES automation_rules(id),
+    rule_id INTEGER REFERENCES automation_rules(id) ON DELETE SET NULL,
     executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

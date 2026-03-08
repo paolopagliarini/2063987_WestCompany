@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchRules, deleteRule, toggleRule, type Rule } from '@/app/lib/api';
+import { fetchRules, deleteRule, toggleRule, toggleActuator, type Rule } from '@/app/lib/api';
 
 interface RuleListProps {
   onEditRule: (rule: any) => void;
@@ -32,16 +32,34 @@ export function RuleList({ onEditRule }: RuleListProps) {
       return;
     }
     try {
+      const rule = rules.find((r) => r.id === id);
       await deleteRule(id);
+
+      if (rule && rule.is_active) {
+        const oppositeAction = rule.actuator_action === 'ON' ? 'OFF' : 'ON';
+        await toggleActuator(rule.actuator_id, oppositeAction);
+      }
+
       await loadRules();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete rule');
     }
   };
 
-  const handleToggle = async (id: number) => {
+  const handleToggle = async (ruleId: number) => {
     try {
-      await toggleRule(id);
+      const rule = rules.find((r) => r.id === ruleId);
+      if (!rule) return;
+
+      const newActiveStatus = !rule.is_active;
+      await toggleRule(ruleId);
+
+      // If we disabled the rule, send the opposite command to the actuator
+      if (!newActiveStatus) {
+        const oppositeAction = rule.actuator_action === 'ON' ? 'OFF' : 'ON';
+        await toggleActuator(rule.actuator_id, oppositeAction);
+      }
+
       await loadRules();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle rule');

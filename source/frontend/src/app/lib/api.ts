@@ -162,31 +162,42 @@ export function fetchRules(): Promise<RulesResponse> {
   return request<RulesResponse>('/api/rules/rules');
 }
 
-export function createRule(payload: RulePayload): Promise<Rule> {
-  return request<Rule>('/api/rules/rules', {
+export async function createRule(payload: RulePayload): Promise<Rule> {
+  const rule = await request<Rule>('/api/rules/rules', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+  await reloadAutomationRules().catch(console.error);
+  return rule;
 }
 
-export function updateRule(
+export async function updateRule(
   id: number,
   payload: Partial<RulePayload>,
 ): Promise<Rule> {
-  return request<Rule>(`/api/rules/rules/${id}`, {
+  const rule = await request<Rule>(`/api/rules/rules/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+  await reloadAutomationRules().catch(console.error);
+  return rule;
 }
 
-export function deleteRule(id: number): Promise<void> {
-  return request<void>(`/api/rules/rules/${id}`, { method: 'DELETE' });
+export async function deleteRule(id: number): Promise<void> {
+  await request<void>(`/api/rules/rules/${id}`, { method: 'DELETE' });
+  await reloadAutomationRules().catch(console.error);
 }
 
-export function toggleRule(id: number): Promise<Rule> {
-  return request<Rule>(`/api/rules/rules/${id}/toggle`, { method: 'PATCH' });
+export async function toggleRule(id: number): Promise<Rule> {
+  const rule = await request<Rule>(`/api/rules/rules/${id}/toggle`, { method: 'PATCH' });
+  await reloadAutomationRules().catch(console.error);
+  return rule;
+}
+
+function reloadAutomationRules(): Promise<void> {
+  return request<void>('/api/automation/rules/reload', { method: 'POST' });
 }
 
 // ---- Notifications --------------------------------------------------------
