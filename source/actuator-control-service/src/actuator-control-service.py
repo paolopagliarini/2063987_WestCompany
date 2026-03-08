@@ -71,7 +71,7 @@ class ManualCommand(BaseModel):
 async def fetch_actuator_states():
     """Fetch current actuator states from the simulator and populate cache."""
     try:
-        resp = await http_client.get(f"{SIMULATOR_URL}/api/actuators")
+        resp = await http_client.get(f"{SIMULATOR_URL}/api/actuators") #lecita perche ottiene solo i nomi e non lo status
         resp.raise_for_status()
         data = resp.json()
         # Simulator returns {"actuators": {"id": "STATE", ...}}

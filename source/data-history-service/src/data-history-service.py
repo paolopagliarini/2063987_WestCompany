@@ -238,7 +238,12 @@ async def get_history(
     limit: int = Query(default=100, ge=1, le=1000, description="Max results"),
     offset: int = Query(default=0, ge=0, description="Offset for pagination"),
 ):
-    """Query historical sensor readings with optional filters."""
+    """
+        Query historical sensor readings with optional filters.
+    
+        This route takes in input some parameters, every parameter is optional.
+        It returns a list of sensor readings with the specified filters applied.
+    """
     conditions = []
     params: dict = {"limit": limit, "offset": offset}
 
