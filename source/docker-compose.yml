@@ -1,7 +1,6 @@
 # Docker-Compose
 
 services:
-
   # PostgreSQL
   database:
     image: postgres:16
@@ -17,7 +16,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U mars_user -d mars_habitat" ]
+      test: ["CMD-SHELL", "pg_isready -U mars_user -d mars_habitat"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,7 +35,7 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -58,7 +57,7 @@ services:
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -83,7 +82,7 @@ services:
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8002/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -108,7 +107,7 @@ services:
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8005/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -129,7 +128,7 @@ services:
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8004/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -153,7 +152,7 @@ services:
       messagging:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8006/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -172,7 +171,7 @@ services:
       database:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8003/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -181,10 +180,8 @@ services:
     build: ./frontend
     container_name: frontend
     restart: always
-    environment:
-      - NODE_ENV=development
     ports:
-      - "5173:5173"
+      - "5173:80"
     depends_on:
       automation-engine:
         condition: service_healthy

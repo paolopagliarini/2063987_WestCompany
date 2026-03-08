@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Toaster } from 'sonner';
 import { SensorDashboard } from './components/SensorDashboard';
 import { TelemetryPage } from './components/TelemetryPage';
 import { ActuatorsControl } from './components/ActuatorsControl';
@@ -6,8 +7,35 @@ import { RuleBuilder } from './components/RuleBuilder';
 import { RuleList } from './components/RuleList';
 import { SystemStatus } from './components/SystemStatus';
 
+const tabs = [
+  { id: 'sensors', label: 'Sensors' },
+  { id: 'telemetry', label: 'Telemetry' },
+  { id: 'actuators', label: 'Actuators' },
+  { id: 'rule-builder', label: 'Rule Builder' },
+  { id: 'rules', label: 'Rules' },
+  { id: 'status', label: 'Status' },
+];
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('sensors');
+  const [currentPage, setCurrentPage] = useState<string>('sensors');
+  const [editingRule, setEditingRule] = useState<any | null>(null);
+
+  const handleEditRule = (rule: any) => {
+    setEditingRule(rule);
+    setCurrentPage('rule-builder');
+  };
+
+  const handleRuleSaved = () => {
+    setEditingRule(null);
+    setCurrentPage('rules');
+  };
+
+  const handleTabClick = (tabId: string) => {
+    if (tabId !== 'rule-builder') {
+      setEditingRule(null);
+    }
+    setCurrentPage(tabId);
+  };
 
   const renderPage = () => {
     switch (currentPage) {
@@ -18,10 +46,10 @@ export default function App() {
       case 'actuators':
         return <ActuatorsControl />;
       case 'rule-builder':
-        return <RuleBuilder />;
-      case 'rule-list':
-        return <RuleList />;
-      case 'system-status':
+        return <RuleBuilder editingRule={editingRule} onSaved={handleRuleSaved} />;
+      case 'rules':
+        return <RuleList onEditRule={handleEditRule} />;
+      case 'status':
         return <SystemStatus />;
       default:
         return <SensorDashboard />;
@@ -29,37 +57,32 @@ export default function App() {
   };
 
   return (
-    <div className="size-full bg-[#f5f5f5] flex flex-col">
-      <header className="bg-white border-b-2 border-[#333] px-6 py-4">
-        <h1 className="text-[24px] font-normal">MARS HABITAT AUTOMATION DASHBOARD</h1>
+    <div className="size-full bg-background text-foreground flex flex-col">
+      <Toaster position="top-right" />
+
+      <header className="bg-background border-b border-border px-6 py-4">
+        <h1 className="text-xl font-semibold">Mars Habitat Dashboard</h1>
       </header>
 
-      <nav className="bg-[#e0e0e0] border-b-2 border-[#999] px-6 py-2">
+      <nav className="bg-background border-b border-border px-6 py-2">
         <div className="flex gap-2">
-          {[
-            { id: 'sensors', label: '[Sensors]' },
-            { id: 'telemetry', label: '[Telemetry]' },
-            { id: 'actuators', label: '[Actuators]' },
-            { id: 'rule-builder', label: '[Rule Builder]' },
-            { id: 'rule-list', label: '[Rules]' },
-            { id: 'system-status', label: '[Status]' }
-          ].map(page => (
+          {tabs.map((tab) => (
             <button
-              key={page.id}
-              onClick={() => setCurrentPage(page.id)}
-              className={`px-4 py-2 border-2 ${
-                currentPage === page.id
-                  ? 'bg-white border-[#333]'
-                  : 'bg-[#d0d0d0] border-[#999]'
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPage === tab.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-muted'
               }`}
             >
-              {page.label}
+              {tab.label}
             </button>
           ))}
         </div>
       </nav>
 
-      <main className="flex-1 p-6 overflow-auto">
+      <main className="flex-1 overflow-auto p-6">
         {renderPage()}
       </main>
     </div>

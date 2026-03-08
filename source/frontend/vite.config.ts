@@ -17,6 +17,36 @@ export default defineConfig({
     },
   },
 
+  server: {
+    port: 5173,
+    proxy: {
+      '/api/ingestion': {
+        target: 'http://localhost:8001',
+        rewrite: (p: string) => p.replace(/^\/api\/ingestion/, ''),
+      },
+      '/api/automation': {
+        target: 'http://localhost:8002',
+        rewrite: (p: string) => p.replace(/^\/api\/automation/, ''),
+      },
+      '/api/rules': {
+        target: 'http://localhost:8003',
+        rewrite: (p: string) => p.replace(/^\/api\/rules/, ''),
+      },
+      '/api/notifications': {
+        target: 'http://localhost:8004',
+        rewrite: (p: string) => p.replace(/^\/api\/notifications/, ''),
+      },
+      '/api/actuators': {
+        target: 'http://localhost:8005',
+        rewrite: (p: string) => p.replace(/^\/api\/actuators/, ''),
+      },
+      '/api/history': {
+        target: 'http://localhost:8006',
+        rewrite: (p: string) => p.replace(/^\/api\/history/, ''),
+      },
+    },
+  },
+
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })

@@ -1,93 +1,215 @@
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+import { usePolling } from '@/app/hooks/usePolling';
+import {
+  fetchSensorsLatest,
+  fetchActuators,
+  fetchRules,
+  fetchNotifications,
+  fetchIngestionHealth,
+  fetchAutomationHealth,
+  fetchRulesHealth,
+  fetchNotificationsHealth,
+  fetchActuatorsHealth,
+  fetchHistoryHealth,
+  NOTIFICATIONS_STREAM_URL,
+  type Notification,
+} from '@/app/lib/api';
+
+// ---------------------------------------------------------------------------
+// Health check definitions
+// ---------------------------------------------------------------------------
+
+const HEALTH_SERVICES = [
+  { name: 'Ingestion', fn: fetchIngestionHealth },
+  { name: 'Automation Engine', fn: fetchAutomationHealth },
+  { name: 'Rule Manager', fn: fetchRulesHealth },
+  { name: 'Notifications', fn: fetchNotificationsHealth },
+  { name: 'Actuator Control', fn: fetchActuatorsHealth },
+  { name: 'Data History', fn: fetchHistoryHealth },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export function SystemStatus() {
-  const services = [
-    {
-      name: 'Message Broker',
-      id: 'mqtt_broker',
-      status: 'Running',
-      uptime: '48h 23m',
-      details: 'Port: 1883 | Clients: 12'
-    },
-    {
-      name: 'Ingestion Service',
-      id: 'data_ingestion',
-      status: 'Running',
-      uptime: '48h 23m',
-      details: 'Messages/sec: 24 | Queue: 0'
-    },
-    {
-      name: 'Automation Engine',
-      id: 'rule_engine',
-      status: 'Running',
-      uptime: '48h 23m',
-      details: 'Active Rules: 4 | Last eval: 1s ago'
-    },
-    {
-      name: 'Frontend WebSocket',
-      id: 'websocket',
-      status: 'Connected',
-      uptime: '2h 15m',
-      details: 'Latency: 12ms | Messages: 1,247'
-    }
-  ];
+  // ---- Summary data (US7) -------------------------------------------------
+
+  const fetchSensors = useCallback(() => fetchSensorsLatest(), []);
+  const fetchActs = useCallback(() => fetchActuators(), []);
+  const fetchRls = useCallback(() => fetchRules(), []);
+  const fetchNotifs = useCallback(() => fetchNotifications(30), []);
+
+  const { data: sensorsData } = usePolling(fetchSensors, 10_000);
+  const { data: actuatorsData } = usePolling(fetchActs, 10_000);
+  const { data: rulesData } = usePolling(fetchRls, 15_000);
+  const { data: notificationsData } = usePolling(fetchNotifs, 10_000);
+
+  const warningCount = sensorsData
+    ? Object.values(sensorsData.sensors).filter((s) => s.status === 'warning').length
+    : 0;
+
+  const activeRulesCount = rulesData
+    ? rulesData.rules.filter((r) => r.is_active === true).length
+    : 0;
+
+  const actuatorsOnCount = actuatorsData
+    ? Object.values(actuatorsData.actuators).filter((a) => a.state === 'ON').length
+    : 0;
+
+  // ---- Service health (US20) ----------------------------------------------
+
+  const [health, setHealth] = useState<Record<string, 'online' | 'offline'>>({});
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      const results: Record<string, 'online' | 'offline'> = {};
+      await Promise.all(
+        HEALTH_SERVICES.map(async (svc) => {
+          try {
+            await svc.fn();
+            results[svc.name] = 'online';
+          } catch {
+            results[svc.name] = 'offline';
+          }
+        }),
+      );
+      setHealth(results);
+    };
+
+    checkHealth();
+    const id = setInterval(checkHealth, 15_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ---- SSE alerts (US16) --------------------------------------------------
+
+  useEffect(() => {
+    const es = new EventSource(NOTIFICATIONS_STREAM_URL);
+
+    es.onmessage = (event) => {
+      try {
+        const notification: Notification = JSON.parse(event.data);
+        if (notification.severity === 'critical') {
+          toast.error(notification.message);
+        } else if (notification.severity === 'warning') {
+          toast.warning(notification.message);
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    return () => es.close();
+  }, []);
+
+  // ---- Notifications log (US17) -------------------------------------------
+
+  const alertNotifications = notificationsData
+    ? notificationsData.notifications.filter(
+        (n) => n.severity === 'warning' || n.severity === 'critical',
+      )
+    : [];
+
+  // ---- Render -------------------------------------------------------------
 
   return (
     <div>
-      <h2 className="mb-6 text-[20px]">System Status</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {services.map((service, idx) => (
-          <div key={idx} className="bg-white border-2 border-[#333] p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-[16px] mb-1">{service.name}</h3>
-                <div className="text-[12px] text-[#666] font-mono">{service.id}</div>
-              </div>
-              <div className={`px-3 py-1 border-2 text-[14px] ${
-                service.status === 'Running' || service.status === 'Connected'
-                  ? 'bg-[#90EE90] border-[#006400]'
-                  : 'bg-[#FFB6C1] border-[#8B0000]'
-              }`}>
-                {service.status}
-              </div>
-            </div>
+      <h2 className="mb-6 text-xl font-semibold">System Status</h2>
 
-            <div className="border-t-2 border-[#ddd] pt-4 space-y-2">
-              <div className="flex justify-between text-[14px]">
-                <span className="text-[#666]">Uptime:</span>
-                <span className="font-mono">{service.uptime}</span>
-              </div>
-              <div className="flex justify-between text-[14px]">
-                <span className="text-[#666]">Details:</span>
-                <span className="font-mono text-[12px]">{service.details}</span>
-              </div>
-            </div>
+      {/* Summary Cards (US7) */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* Warnings */}
+        <div className="border rounded-lg p-5">
+          <p className="text-sm text-gray-500 mb-1">Warnings</p>
+          <p className="text-3xl font-bold text-amber-500">{warningCount}</p>
+        </div>
 
-            <div className="mt-4 pt-4 border-t-2 border-[#ddd]">
-              <div className="text-[11px] text-[#666] mb-2">LOAD</div>
-              <div className="flex items-end gap-1 h-[30px]">
-                {Array.from({ length: 20 }, (_, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 bg-[#4169E1]"
-                    style={{ height: `${20 + Math.random() * 80}%` }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
+        {/* Active Rules */}
+        <div className="border rounded-lg p-5">
+          <p className="text-sm text-gray-500 mb-1">Active Rules</p>
+          <p className="text-3xl font-bold text-blue-500">{activeRulesCount}</p>
+        </div>
+
+        {/* Actuators ON */}
+        <div className="border rounded-lg p-5">
+          <p className="text-sm text-gray-500 mb-1">Actuators ON</p>
+          <p className="text-3xl font-bold text-green-500">{actuatorsOnCount}</p>
+        </div>
       </div>
 
-      <div className="mt-6 bg-white border-2 border-[#333] p-6">
-        <h3 className="text-[16px] mb-4">System Logs</h3>
-        <div className="bg-[#1e1e1e] text-[#00ff00] font-mono text-[12px] p-4 h-[200px] overflow-auto">
-          <div>[2026-03-06 14:23:45] INFO: Data ingestion service started</div>
-          <div>[2026-03-06 14:23:47] INFO: Connected to message broker</div>
-          <div>[2026-03-06 14:23:48] INFO: Automation engine initialized</div>
-          <div>[2026-03-06 14:23:50] INFO: Loaded 4 automation rules</div>
-          <div>[2026-03-06 14:24:12] INFO: Sensor data received: temperature=22.5</div>
-          <div>[2026-03-06 14:24:15] INFO: Rule R001 evaluated: condition=false</div>
-          <div>[2026-03-06 14:24:18] INFO: Sensor data received: humidity=45</div>
-          <div>[2026-03-06 14:24:21] INFO: WebSocket client connected</div>
+      {/* Service Health (US20) */}
+      <div className="border rounded-lg p-4 mb-6">
+        <p className="text-sm font-medium text-gray-500 mb-3">Service Health</p>
+        <div className="flex flex-wrap gap-6">
+          {HEALTH_SERVICES.map((svc) => {
+            const status = health[svc.name];
+            const isOnline = status === 'online';
+            return (
+              <div key={svc.name} className="flex items-center gap-2">
+                <span
+                  className={`w-3 h-3 rounded-full ${
+                    status == null
+                      ? 'bg-gray-300'
+                      : isOnline
+                        ? 'bg-green-500'
+                        : 'bg-red-500'
+                  }`}
+                />
+                <span className="text-sm">{svc.name}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Notifications Log (US17) */}
+      <div className="border rounded-lg overflow-hidden">
+        <div className="px-4 py-3 border-b bg-gray-50">
+          <p className="text-sm font-medium text-gray-500">Recent Alerts</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500 bg-gray-50">
+                <th className="px-4 py-2 font-medium">Timestamp</th>
+                <th className="px-4 py-2 font-medium">Severity</th>
+                <th className="px-4 py-2 font-medium">Sensor</th>
+                <th className="px-4 py-2 font-medium">Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {alertNotifications.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
+                    No warning or critical notifications yet.
+                  </td>
+                </tr>
+              ) : (
+                alertNotifications.map((n) => (
+                  <tr key={n.notification_id} className="border-t">
+                    <td className="px-4 py-2 whitespace-nowrap font-mono text-xs text-gray-600">
+                      {new Date(n.timestamp).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                          n.severity === 'critical'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {n.severity}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 font-mono text-xs">{n.sensor_id}</td>
+                    <td className="px-4 py-2">{n.message}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
