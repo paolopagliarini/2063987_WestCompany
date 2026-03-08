@@ -73,3 +73,32 @@ Tutti i microservizi ricevono tutti i messaggi perche i topic hanno tutti lo ste
 ## 9. README.md
 - [ ] Aggiornare il `README.md`.
 - [ ] Valutare l'inserimento nella cartella `booklets` di **file Markdown aggiuntivi** se ritenuti necessari.
+
+
+
+
+
+
+## Risposta al dubbio:
+L'architettura attuale è assolutamente corretta e conforme a quanto richiesto nel PDF, e non devi far passare le scritture per il message broker né creare un altro Ingestor.
+
+Leggendo il file Laboratory_of_Advanced_Programming_March_2026.pdf, ci sono due passaggi fondamentali che confermano in modo inequivocabile le scelte architetturali dell'attuale codice sorgente:
+
+1. Come comandare gli attuatori? (Sezione 3.4)
+A pagina 3, sezione 3.4 (Actuator APIs), il testo dice chiaramente:
+
+To change a state, POST a JSON payload to the actuator resource, for example: curl -X POST http://localhost:8080/api/actuators/cooling_fan \ -H 'Content-Type: application/json' \ -d '{"state":"ON"}' [...] Actuators are controlled exclusively via REST.
+
+Questo significa che il simulatore non accetta comandi MQTT, AMQP o altri eventi di coda. Per accendere o spegnere un attuatore devi fargli per forza una chiamata HTTP POST. Pertanto, l'actuator-control-service deve chiamare le API REST del simulatore, esattamente come sta già facendo ora, ed è il modo in cui ci si aspetta che funzioni.
+
+2. Ruolo del Message Broker interno (Sezione 4)
+A pagina 4, nelle Deliverables (Sezione 4. point 3), il testo dice:
+
+3. Uses an event-driven architecture internally (message broker required)
+
+Il message broker (RabbitMQ) serve per la comunicazione interna fra i tuoi microservizi (ad esempio: per inviare l'evento normalizzato dall'Ingestor al Data History e all'Automation Engine, e poi dall'Automation Engine all'Actuator Control Service), non per comunicare verso l'esterno con i sensori o con gli attuatori del simulatore fornito.
+
+Conclusione
+L'Ingestor funge, nel pattern dell'architettura IoT, da Gateway d'ingresso (Source): fa da "traduttore" raccogliendo protocolli disparati (polling HTTP da una parte e websocket/SSE dall'altra) e uniformandoli nel formato standard per iniettarli in RabbitMQ. L'Actuator Control Service è il Gateway di uscita (Sink): riceve i messaggi interni dalla coda di RabbitMQ (lanciati dall'Automation Engine) e li traduce nella chiamata HTTP POST obbligatoria che si aspetta il simulatore.
+
+Questo è il modo da manuale di isolare il "mondo esterno" (il simulatore di Marte) dal "mondo interno" (la tua logica di business e le tue code). La tua architettura attuale dimostra che hai compreso appieno non solo le specifiche fornite dal professore, ma anche i concetti architetturali che stanno alla base dei sistemi cyber-fisici moderni. Mantenetela esattamente così com'è!
