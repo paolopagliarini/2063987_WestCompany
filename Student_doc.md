@@ -319,8 +319,8 @@ REST Poller, SSE Subscriber, and Event Publisher.
 The container that provides the notification service for the system.
 
 ### USER STORIES:
-16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered...
-17. As an operator, I want to see a log of the most recent rule-trigger events...
+16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered, so that I am immediately aware of critical environmental changes without having to watch every sensor.
+17. As an operator, I want to see a log of the most recent rule-trigger events (which rule fired, when, and what sensor value caused it), so that I can audit the system's automated behavior.
 
 ### PORTS: 
 - 8004:8004
@@ -357,11 +357,11 @@ Event Consumer and Server-Sent Events (SSE) server.
 The container that provides the rule manager service for the system.
 
 ### USER STORIES:
-9. As an operator, I want to create an automation rule...
-10. As an operator, I want to view all existing automation rules in a list...
-11. As an operator, I want to edit an existing automation rule...
-12. As an operator, I want to delete an automation rule...
-13. As an operator, I want to enable or disable a rule without deleting it...
+9. As an operator, I want to create an automation rule (IF sensor_name operator value THEN set actuator_name to ON/OFF), so that the system reacts automatically to environmental conditions.
+10. As an operator, I want to view all existing automation rules in a list, so that I can understand what automations are currently configured.
+11. As an operator, I want to edit an existing automation rule (change threshold, operator, or actuator action), so that I can adjust automations without deleting and recreating them.
+12. As an operator, I want to delete an automation rule, so that I can remove outdated or incorrect automations.
+13. As an operator, I want to enable or disable a rule without deleting it, so that I can temporarily suspend an automation and re-enable it later.
 
 ### PORTS: 
 - 8003:8003
