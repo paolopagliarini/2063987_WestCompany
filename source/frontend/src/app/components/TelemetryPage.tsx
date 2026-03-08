@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -17,6 +17,9 @@ import { fetchSensorsLatest, type SensorEvent } from '@/app/lib/api';
 
 const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2'];
 const MAX_HISTORY_POINTS = 60;
+
+// Module-level store: persists across component mount/unmount (page navigation)
+const telemetryHistory = new Map<string, Array<{ time: string; value: number }>>();
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -53,23 +56,16 @@ function metricKey(event: SensorEvent): string {
 export function TelemetryPage() {
   const { data, loading, error } = usePolling(fetchSensorsLatest, 5000);
 
-  // Chart history: Map<metricKey, Array<{time, ...metricValues}>>
-  // We store per-topic history where each entry has time + all metric values
-  const historyRef = useRef<Map<string, Array<{ time: string; value: number }>>>(
-    new Map(),
-  );
-
-  // Append new data points on each poll
+  // Append new data points on each poll into the module-level store
   useEffect(() => {
     if (!data?.sensors) return;
-    const map = historyRef.current;
     for (const event of Object.values(data.sensors)) {
       if (event.source !== 'stream') continue;
       const key = metricKey(event);
-      let arr = map.get(key);
+      let arr = telemetryHistory.get(key);
       if (!arr) {
         arr = [];
-        map.set(key, arr);
+        telemetryHistory.set(key, arr);
       }
       arr.push({
         time: new Date(event.timestamp).toLocaleTimeString(),
@@ -89,7 +85,7 @@ export function TelemetryPage() {
       // Find the longest history among all metrics in this topic
       const metricHistories = events.map((e) => ({
         metric: e.metric,
-        history: historyRef.current.get(metricKey(e)) ?? [],
+        history: telemetryHistory.get(metricKey(e)) ?? [],
       }));
 
       const maxLen = Math.max(...metricHistories.map((h) => h.history.length));
@@ -206,17 +202,19 @@ export function TelemetryPage() {
                   />
                   <YAxis tick={{ fontSize: 10 }} />
                   <Tooltip />
-                  {events.map((event, idx) => (
-                    <Line
-                      key={metricKey(event)}
-                      dataKey={event.metric}
-                      name={event.metric}
-                      type="monotone"
-                      stroke={COLORS[idx % COLORS.length]}
-                      dot={false}
-                      strokeWidth={2}
-                    />
-                  ))}
+                  {events
+                    .filter((event) => event.metric !== 'cumulative_kwh')
+                    .map((event, idx) => (
+                      <Line
+                        key={metricKey(event)}
+                        dataKey={event.metric}
+                        name={event.metric}
+                        type="monotone"
+                        stroke={COLORS[idx % COLORS.length]}
+                        dot={false}
+                        strokeWidth={2}
+                      />
+                    ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>

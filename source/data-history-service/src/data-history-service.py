@@ -94,6 +94,9 @@ async def store_event(event: dict):
     except (ValueError, AttributeError):
         recorded_at = datetime.now(timezone.utc)
 
+    # Strip timezone info: DB column is TIMESTAMP (no timezone), value is always UTC
+    recorded_at = recorded_at.replace(tzinfo=None)
+
     reading = {
         "sensor_id": event.get("sensor_id", "unknown"),
         "value": event.get("value", 0),

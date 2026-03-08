@@ -15,6 +15,7 @@ import { fetchSensorsLatest, type SensorEvent } from '@/app/lib/api';
 // Constants
 // ---------------------------------------------------------------------------
 
+// Only REST-polled sensors appear here; SSE/telemetry sensors are in TelemetryPage
 const SENSOR_CATEGORIES: Record<string, string> = {
   greenhouse_temperature: 'environmental',
   entrance_humidity: 'environmental',
@@ -24,16 +25,9 @@ const SENSOR_CATEGORIES: Record<string, string> = {
   air_quality_voc: 'chemical',
   air_quality_pm25: 'chemical',
   water_tank_level: 'physical',
-  solar_array: 'power',
-  power_bus: 'power',
-  power_consumption: 'power',
-  radiation: 'physical',
-  life_support: 'physical',
-  thermal_loop: 'physical',
-  airlock: 'physical',
 };
 
-const CATEGORY_LABELS = ['all', 'environmental', 'chemical', 'power', 'physical'] as const;
+const CATEGORY_LABELS = ['all', 'environmental', 'chemical', 'physical'] as const;
 
 const CHART_COLORS = [
   'var(--primary, #2563eb)',

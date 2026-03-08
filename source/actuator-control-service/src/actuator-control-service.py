@@ -73,15 +73,16 @@ async def fetch_actuator_states():
     try:
         resp = await http_client.get(f"{SIMULATOR_URL}/api/actuators")
         resp.raise_for_status()
-        actuators = resp.json()
-        for actuator in actuators:
-            act_id = actuator.get("actuator_id", actuator.get("id", "unknown"))
+        data = resp.json()
+        # Simulator returns {"actuators": {"id": "STATE", ...}}
+        actuators_dict = data.get("actuators", {}) if isinstance(data, dict) else {}
+        for act_id, state in actuators_dict.items():
             actuator_states[act_id] = {
                 "actuator_id": act_id,
-                "state": actuator.get("state", "unknown"),
+                "state": state,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
-        logger.info(f"Fetched {len(actuators)} actuator states from simulator")
+        logger.info(f"Fetched {len(actuators_dict)} actuator states from simulator")
     except Exception as e:
         logger.error(f"Failed to fetch actuator states: {e}")
 
