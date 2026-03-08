@@ -11,19 +11,14 @@
 ---
 
 ## 3. Aggiornamento stato attuatori
-- [ ] Quando viene aggiunta una nuova regola, il sistema **non aggiorna lo stato degli attuatori automaticamente**.
-- [ ] Verificare se il problema dipende da:
-  - [ ] **Frontend** (polling)
-  - [ ] **Automation-engine**
-
-Note:
-- Gli attuatori vengono accesi o spenti **solo manualmente**.
+- [x] Quando viene aggiunta una nuova regola, il sistema **non aggiorna lo stato degli attuatori automaticamente**.
 
 ---
 
 ## 4. Polling del frontend
 - [ ] Il frontend effettua **polling sui microservizi ogni 5 secondi**.
 - [ ] Verificare se dovrebbe invece **consumare direttamente gli eventi dal message broker**.
+- [ ] Quando un attuatore non viene modificato lo stato ON -> ON rimane nella storia.
 
 ---
 
