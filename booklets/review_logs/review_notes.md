@@ -5,9 +5,12 @@ In this document are written some notes on every single service and how they wor
 ### Description:
 The automation engine reads the rules from the database through the load_rules() function.
 Rules are loaded directly in the cache to achieve the max response speed possible and to not overload the database.
+
 Once the rules are loaded, when an even is dispatched by the broker the condition of each single rule are verified. If a rule triggers the Automation Engine publishes a message to the "mars_events" exchange.
 
 Rules are updated every 30s by an internal loop.
+
+Access to cache is regulated with a Lock ensuring thread safety.
 
 ### Endpoints:
 #### /health:
@@ -43,3 +46,54 @@ Return all the cached actuator informations after refreshing the list from the I
 
 #### /actuators/{actuator_id}/history:
 Returns the command history for a given actuator. 
+
+## Data History Service:
+### Description:
+It receives data from the broker containing historical data to insert in the database from sensors.
+
+### Functioning:
+Data is delivered by the broker and are put in a buffer.
+Once the buffer is full then all data contained in it is flushed to the db.
+It is possible to force the flush to the buffer.
+
+### Endpoints: 
+#### /health: 
+To request an healtcheck.
+
+#### /history:
+Returns the history of sensor values.
+It is possible to apply filters.
+
+#### /history/{sensor_id}:
+Retrieves the historical data of the given sensor.
+It is possible to apply filters.
+
+#### /history/{sensor_id}/aggregate:
+Get aggregated readings for the given sensor grouped in a given time interval.
+
+#### /sensors:
+List all sensors that have historical data stored ordered in LIFO order.
+
+## Notification Service:
+### Description:
+It receives events from the broker and forwards them to clients connected via SSE.
+
+### Functioning:
+When the broker notifies it, the message is processed, parsing the event into a custom Notification, and then broadcasted to all connected clients.
+Notification are stored in a buffer containing the last 100 notifications.
+
+### Endpoints: 
+#### /health: 
+To request an healtcheck.
+
+#### /notifications:
+Returns the last requested number of notifications. May filter by severity.
+
+#### /notifications/stream:
+For a client it is possible to subscribe to this endpoint to receive notifications in real-time.
+Sends also the last 10 notifications on subscription.
+
+#### /notifications/stats:
+Returns statistics about notifications.
+
+
