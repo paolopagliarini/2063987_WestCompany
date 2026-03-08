@@ -42,7 +42,7 @@ The container that provides the PostgreSQL database for the system.
 13. As an operator, I want to enable or disable a rule without deleting it, so that I can temporarily suspend an automation and re-enable it later.
 
 ### PORTS: 
-5433:5432
+- 5433:5432
 
 ### PERSISTENCE EVALUATION
 The data stored in the container are the automation rules, sensor historical data, and actuator command execution history, which are persisted in a PostgreSQL database through a volume (`postgres_data`) so they survive service restarts.
@@ -73,8 +73,8 @@ The container that provides the RabbitMQ message broker for the system.
 16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered...
 
 ### PORTS: 
-5672:5672 (AMQP)
-15672:15672 (Management UI)
+- 5672:5672 (AMQP)
+- 15672:15672 (Management UI)
 
 ### PERSISTENCE EVALUATION
 The configurations and durable queues of RabbitMQ are persisted using the `rabbitmq_data` volume to protect queued events from data loss.
@@ -121,7 +121,7 @@ The container that provides the frontend for the system.
 20. As an operator, I want to see the connectivity status of each data source (online / offline / degraded), so that I can detect if a sensor or telemetry stream has stopped sending data.
 
 ### PORTS: 
-5173:80
+- 5173:80
 
 ### PERSISTENCE EVALUATION
 No data is persisted by this container. It acts completely statelessly as a user interface.
@@ -163,7 +163,7 @@ The container that provides the actuator control service for the system.
 15. As an operator, I want to see when each actuator was last changed and whether the change was triggered manually or by a rule...
 
 ### PORTS: 
-8005:8005
+- 8005:8005
 
 ### PERSISTENCE EVALUATION
 The service itself is stateless and maintains an in-memory cache, but logs all commands directly to the PostgreSQL database for persistent history.
@@ -202,10 +202,10 @@ Event Consumer and REST API.
 The container that provides the automation engine for the system.
 
 ### USER STORIES:
-14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event...
+14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event, so that the habitat is protected without manual intervention.
 
 ### PORTS: 
-8002:8002
+- 8002:8002
 
 ### PERSISTENCE EVALUATION
 Stateless component. It caches rules in memory but loads them from the PostgreSQL database on startup and at interval reloads.
@@ -241,7 +241,7 @@ The container that provides the data history service for the system.
 8. As an operator, I want to see a live time chart of a sensor's values while the page is open, so that I can observe trends over time.
 
 ### PORTS: 
-8006:8006
+- 8006:8006
 
 ### PERSISTENCE EVALUATION
 Acts as the writer to persist data: it stores normalized sensor events into the PostgreSQL database.
@@ -286,7 +286,7 @@ The container that provides the ingestion service for the system.
 20. As an operator, I want to see the connectivity status of each data source...
 
 ### PORTS: 
-8001:8001
+- 8001:8001
 
 ### PERSISTENCE EVALUATION
 Fully stateless, relies only on temporary in-memory caching to serve the latest states quickly.
@@ -323,7 +323,7 @@ The container that provides the notification service for the system.
 17. As an operator, I want to see a log of the most recent rule-trigger events...
 
 ### PORTS: 
-8004:8004
+- 8004:8004
 
 ### PERSISTENCE EVALUATION
 Caches the last 100 notifications in-memory only. No long-term persistence implemented directly here.
@@ -364,7 +364,7 @@ The container that provides the rule manager service for the system.
 13. As an operator, I want to enable or disable a rule without deleting it...
 
 ### PORTS: 
-8003:8003
+- 8003:8003
 
 ### PERSISTENCE EVALUATION
 Does not persist data locally. Defers state mutation entirely to the PostgreSQL database.
