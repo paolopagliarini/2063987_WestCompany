@@ -6,6 +6,7 @@ from diagrams.onprem.queue import Kafka
 from diagrams.onprem.queue import Activemq
 from diagrams.programming.framework import React
 from diagrams.aws.analytics import Glue
+from diagrams.onprem.database import PostgreSQL
 
 graph_attr = {
     "fontsize": "16",
@@ -13,7 +14,7 @@ graph_attr = {
     "nodesep": "1.2",
     "ranksep": "1.5",
     "overlap": "false",
-    "sep": "+25",
+    "sep": "+0",
     "compound": "true"
 }
 
@@ -32,8 +33,13 @@ with Diagram(
         broker = Activemq("Event Broker")
     
     with Cluster("Services"):
-        frontend_formatter = Docker("Frontend Formatter")
+        automation_engine = Docker("Automation Engine")
         actuator_control_service = Docker("Actuator Control Service")
+        notification_service = Docker("Notification Service")
+        data_history_service = Docker("Data History Service")
+        rule_manager_service = Docker("Rule Manager Service")
+    
+    db = PostgreSQL("Database")
 
     with Cluster("Frontend"):
         frontend = React("Frontend")
@@ -46,8 +52,18 @@ with Diagram(
     
     broker >> Edge(color='blue') >> frontend
 
-    broker >> frontend_formatter
-    broker >> actuator_control_service
+    broker >> Edge(color='red', label='Normalized Event') >> data_history_service
+    data_history_service >> Edge(color='brown') >> db
+    db >> Edge(color='brown', style='dotted') >> data_history_service
 
-    frontend_formatter >> Edge(style='dotted') >> broker
-    actuator_control_service >> Edge(style='dotted') >> broker
+    ## ACS
+    broker >> Edge(color='red', label='Actuator Command') >> actuator_control_service
+    actuator_control_service >> Edge(color='yellow', label='Available Actuators') >> sim
+    actuator_control_service >> Edge(color='brown', label='Actuator Commands Logs') >> db
+    db >> Edge(color='brown', style='dotted') >> actuator_control_service
+
+    ## AE 
+    broker >> Edge(color='red') >> automation_engine
+    automation_engine >> Edge(color='red', style='dotted', label='Rule Triggered') >> broker
+    automation_engine >> Edge(color='brown') >> db
+    db >> Edge(color='brown', style='dotted') >> automation_engine
