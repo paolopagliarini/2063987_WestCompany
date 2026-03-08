@@ -52,15 +52,15 @@ REST_SCHEMA_MAP = {
     "water_tank_level": "rest.level.v1",
 }
 
-# Telemetry topic -> schema mapping
+# Telemetry topic -> schema mapping (full topic names from /api/telemetry/topics)
 TOPIC_SCHEMA_MAP = {
-    "solar_array": "topic.power.v1",
-    "power_bus": "topic.power.v1",
-    "power_consumption": "topic.power.v1",
-    "radiation": "topic.environment.v1",
-    "life_support": "topic.environment.v1",
-    "thermal_loop": "topic.thermal_loop.v1",
-    "airlock": "topic.airlock.v1",
+    "mars/telemetry/solar_array": "topic.power.v1",
+    "mars/telemetry/power_bus": "topic.power.v1",
+    "mars/telemetry/power_consumption": "topic.power.v1",
+    "mars/telemetry/radiation": "topic.environment.v1",
+    "mars/telemetry/life_support": "topic.environment.v1",
+    "mars/telemetry/thermal_loop": "topic.thermal_loop.v1",
+    "mars/telemetry/airlock": "topic.airlock.v1",
 }
 
 TELEMETRY_TOPICS = list(TOPIC_SCHEMA_MAP.keys())
@@ -337,24 +337,36 @@ async def poll_rest_sensors(client: httpx.AsyncClient):
     """Poll all REST sensors from the simulator."""
     while True:
         try:
+            # First get the list of available sensors
             resp = await client.get(f"{SIMULATOR_URL}/api/sensors")
             resp.raise_for_status()
-            sensors = resp.json()
+            data = resp.json()
+            sensor_ids = data.get("sensors", [])
 
-            for sensor in sensors:
-                sensor_id = sensor.get("sensor_id", sensor.get("id", "unknown"))
-                schema = REST_SCHEMA_MAP.get(sensor_id)
-                if schema is None:
-                    logger.debug(f"Unknown REST sensor: {sensor_id}, skipping")
-                    continue
+            # Fetch each sensor's data individually
+            for sensor_id in sensor_ids:
+                try:
+                    sensor_resp = await client.get(f"{SIMULATOR_URL}/api/sensors/{sensor_id}")
+                    sensor_resp.raise_for_status()
+                    sensor_data = sensor_resp.json()
 
-                normalizer = NORMALIZER_MAP[schema]
-                sensor["sensor_id"] = sensor_id
-                events = normalizer(sensor)
-                for event in events:
-                    await publish_event(event)
+                    schema = REST_SCHEMA_MAP.get(sensor_id)
+                    if schema is None:
+                        logger.debug(f"Unknown REST sensor: {sensor_id}, skipping")
+                        continue
 
-            logger.info(f"Polled {len(sensors)} REST sensors")
+                    normalizer = NORMALIZER_MAP[schema]
+                    sensor_data["sensor_id"] = sensor_id
+                    events = normalizer(sensor_data)
+                    for event in events:
+                        await publish_event(event)
+
+                except httpx.HTTPError as e:
+                    logger.error(f"Error fetching sensor {sensor_id}: {e}")
+                except Exception as e:
+                    logger.error(f"Unexpected error for sensor {sensor_id}: {e}")
+
+            logger.info(f"Polled {len(sensor_ids)} REST sensors")
 
         except httpx.HTTPError as e:
             logger.error(f"REST polling error: {e}")
