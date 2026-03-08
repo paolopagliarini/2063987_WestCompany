@@ -12,9 +12,9 @@ graph_attr = {
     "fontsize": "16",
     "splines": "ortho",
     "nodesep": "1.2",
-    "ranksep": "1.5",
+    "ranksep": "2",
     "overlap": "false",
-    "sep": "+0",
+    "sep": "+25",
     "compound": "true"
 }
 
@@ -52,13 +52,13 @@ with Diagram(
     
     broker >> Edge(color='blue') >> frontend
 
+    # DHS
     broker >> Edge(color='red', label='Normalized Event') >> data_history_service
     data_history_service >> Edge(color='brown') >> db
-    db >> Edge(color='brown', style='dotted') >> data_history_service
 
     ## ACS
     broker >> Edge(color='red', label='Actuator Command') >> actuator_control_service
-    actuator_control_service >> Edge(color='yellow', label='Available Actuators') >> sim
+    actuator_control_service >> Edge(color='grey', label='Available Actuators') >> sim
     actuator_control_service >> Edge(color='brown', label='Actuator Commands Logs') >> db
     db >> Edge(color='brown', style='dotted') >> actuator_control_service
 
@@ -67,3 +67,7 @@ with Diagram(
     automation_engine >> Edge(color='red', style='dotted', label='Rule Triggered') >> broker
     automation_engine >> Edge(color='brown') >> db
     db >> Edge(color='brown', style='dotted') >> automation_engine
+
+    ## NS
+    broker >> Edge(color='red') >> notification_service
+    notification_service >> Edge(color='blue') >> frontend
