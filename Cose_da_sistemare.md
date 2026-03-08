@@ -12,7 +12,7 @@
 
 ## 3. Aggiornamento stato attuatori
 - [x] Quando viene aggiunta una nuova regola, il sistema **non aggiorna lo stato degli attuatori automaticamente**.
-- [ ] Quando un attuatore non viene modificato lo stato ON -> ON rimane nella storia.
+- [x] Quando un attuatore non viene modificato lo stato ON -> ON rimane nella storia.
 
 ---
 
@@ -22,18 +22,23 @@
 
 ---
 
-## 5. Slides
+## 5. Actuator-control-service
+- [ ] L'actuator-control-service non prende gli eventi dall ingestion.
+
+---
+
+## 6. Slides
 - [x] Tradurre slides.
 - [ ] Completare le slide della presentazione.
 
 ---
 
-## 6. Tecnologie utilizzate
+## 7. Tecnologie utilizzate
 - [ ] Documentare **tutte le tecnologie utilizzate** nel progetto.
 - [ ] Specificare anche **le versioni** per il report finale.
 
 ---
 
-## 7. README.md
+## 8. README.md
 - [ ] Aggiornare il `README.md`.
 - [ ] Valutare l'inserimento nella cartella `booklets` di **file Markdown aggiuntivi** se ritenuti necessari.
