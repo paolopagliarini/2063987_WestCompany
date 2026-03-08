@@ -41,10 +41,10 @@ export function SystemStatus() {
   const fetchRls = useCallback(() => fetchRules(), []);
   const fetchNotifs = useCallback(() => fetchNotifications(30), []);
 
-  const { data: sensorsData } = usePolling(fetchSensors, 10_000);
-  const { data: actuatorsData } = usePolling(fetchActs, 10_000);
-  const { data: rulesData } = usePolling(fetchRls, 15_000);
-  const { data: notificationsData } = usePolling(fetchNotifs, 10_000);
+  const { data: sensorsData } = usePolling(fetchSensors, 5000);
+  const { data: actuatorsData } = usePolling(fetchActs, 5000);
+  const { data: rulesData } = usePolling(fetchRls, 5000);
+  const { data: notificationsData } = usePolling(fetchNotifs, 5000);
 
   const warningCount = sensorsData
     ? Object.values(sensorsData.sensors).filter((s) => s.status === 'warning').length
@@ -108,8 +108,8 @@ export function SystemStatus() {
 
   const alertNotifications = notificationsData
     ? notificationsData.notifications.filter(
-        (n) => n.severity === 'warning' || n.severity === 'critical',
-      )
+      (n) => n.severity === 'warning' || n.severity === 'critical',
+    )
     : [];
 
   // ---- Render -------------------------------------------------------------
@@ -149,13 +149,12 @@ export function SystemStatus() {
             return (
               <div key={svc.name} className="flex items-center gap-2">
                 <span
-                  className={`w-3 h-3 rounded-full ${
-                    status == null
-                      ? 'bg-gray-300'
-                      : isOnline
-                        ? 'bg-green-500'
-                        : 'bg-red-500'
-                  }`}
+                  className={`w-3 h-3 rounded-full ${status == null
+                    ? 'bg-gray-300'
+                    : isOnline
+                      ? 'bg-green-500'
+                      : 'bg-red-500'
+                    }`}
                 />
                 <span className="text-sm">{svc.name}</span>
               </div>
@@ -194,11 +193,10 @@ export function SystemStatus() {
                     </td>
                     <td className="px-4 py-2">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                          n.severity === 'critical'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-amber-100 text-amber-700'
-                        }`}
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${n.severity === 'critical'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-amber-100 text-amber-700'
+                          }`}
                       >
                         {n.severity}
                       </span>

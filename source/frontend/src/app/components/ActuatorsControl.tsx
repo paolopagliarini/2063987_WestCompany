@@ -93,11 +93,10 @@ export function ActuatorsControl() {
                   {formatId(actuator.actuator_id)}
                 </h3>
                 <span
-                  className={`inline-block rounded-full px-4 py-1 text-lg font-bold ${
-                    isOn
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
+                  className={`inline-block rounded-full px-4 py-1 text-lg font-bold ${isOn
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                    }`}
                 >
                   {actuator.state}
                 </span>
@@ -145,13 +144,12 @@ export function ActuatorsControl() {
                           </div>
                           <div className="mt-0.5 flex items-center gap-2">
                             <span
-                              className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                                cmd.source === 'manual'
-                                  ? 'bg-blue-50 text-blue-600'
-                                  : cmd.source?.includes('automation')
-                                    ? 'bg-purple-50 text-purple-600'
-                                    : 'bg-gray-100 text-gray-500'
-                              }`}
+                              className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${cmd.source === 'manual'
+                                ? 'bg-blue-50 text-blue-600'
+                                : cmd.source?.includes('automation')
+                                  ? 'bg-purple-50 text-purple-600'
+                                  : 'bg-gray-100 text-gray-500'
+                                }`}
                             >
                               {cmd.source === 'manual'
                                 ? 'Manual'

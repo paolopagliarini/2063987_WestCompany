@@ -165,11 +165,10 @@ export function SensorDashboard() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat === 'all' ? null : cat)}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border bg-background text-foreground hover:bg-muted'
-              }`}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors ${isActive
+                ? 'bg-primary text-primary-foreground'
+                : 'border bg-background text-foreground hover:bg-muted'
+                }`}
             >
               {cat}
             </button>
@@ -234,11 +233,10 @@ export function SensorDashboard() {
                         {event.unit}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          event.status === 'warning'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${event.status === 'warning'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-green-100 text-green-700'
+                          }`}
                       >
                         {event.status}
                       </span>

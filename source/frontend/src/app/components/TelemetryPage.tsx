@@ -179,11 +179,10 @@ export function TelemetryPage() {
                         {event.unit}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          event.status === 'warning'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${event.status === 'warning'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-green-100 text-green-700'
+                          }`}
                       >
                         {event.status}
                       </span>
