@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -41,6 +41,9 @@ const CHART_COLORS = [
 const MAX_HISTORY_POINTS = 60;
 const OFFLINE_THRESHOLD_MS = 30_000;
 
+// Module-level store: persists across component mount/unmount (page navigation)
+const sensorHistory = new Map<string, Array<{ time: string; value: number }>>();
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -76,21 +79,15 @@ export function SensorDashboard() {
   // Which sensor_ids have their chart expanded
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  // Chart history keyed by cache key
-  const historyRef = useRef<Map<string, Array<{ time: string; value: number }>>>(
-    new Map(),
-  );
-
   // Push new data points into history whenever polling data changes
   useEffect(() => {
     if (!data?.sensors) return;
-    const map = historyRef.current;
     for (const event of Object.values(data.sensors)) {
       const key = cacheKey(event);
-      let arr = map.get(key);
+      let arr = sensorHistory.get(key);
       if (!arr) {
         arr = [];
-        map.set(key, arr);
+        sensorHistory.set(key, arr);
       }
       arr.push({
         time: new Date(event.timestamp).toLocaleTimeString(),
@@ -252,24 +249,50 @@ export function SensorDashboard() {
                         allowDuplicatedCategory={false}
                         tick={{ fontSize: 10 }}
                       />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
                       <Tooltip />
-                      {events.map((event, idx) => {
-                        const key = cacheKey(event);
-                        const lineData = historyRef.current.get(key) ?? [];
-                        return (
-                          <Line
-                            key={key}
-                            data={lineData}
-                            dataKey="value"
-                            name={event.metric}
-                            type="monotone"
-                            stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                            dot={false}
-                            strokeWidth={2}
-                          />
-                        );
-                      })}
+                      {/* Non-cumulative metrics on left axis */}
+                      {events
+                        .filter((event) => !event.metric.startsWith('cumulative_'))
+                        .map((event, idx) => {
+                          const key = cacheKey(event);
+                          const lineData = sensorHistory.get(key) ?? [];
+                          return (
+                            <Line
+                              key={key}
+                              yAxisId="left"
+                              data={lineData}
+                              dataKey="value"
+                              name={event.metric}
+                              type="monotone"
+                              stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                              dot={false}
+                              strokeWidth={2}
+                            />
+                          );
+                        })}
+                      {/* Cumulative metrics on right axis */}
+                      {events
+                        .filter((event) => event.metric.startsWith('cumulative_'))
+                        .map((event, idx) => {
+                          const key = cacheKey(event);
+                          const lineData = sensorHistory.get(key) ?? [];
+                          return (
+                            <Line
+                              key={key}
+                              yAxisId="right"
+                              data={lineData}
+                              dataKey="value"
+                              name={event.metric}
+                              type="monotone"
+                              stroke="#6b7280"
+                              strokeDasharray="5 5"
+                              dot={false}
+                              strokeWidth={2}
+                            />
+                          );
+                        })}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

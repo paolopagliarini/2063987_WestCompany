@@ -192,17 +192,36 @@ export function TelemetryPage() {
                     dataKey="time"
                     tick={{ fontSize: 10 }}
                   />
-                  <YAxis tick={{ fontSize: 10 }} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
                   <Tooltip />
+                  {/* Non-cumulative metrics on left axis */}
                   {events
-                    .filter((event) => event.metric !== 'cumulative_kwh')
+                    .filter((event) => !event.metric.startsWith('cumulative_'))
                     .map((event, idx) => (
                       <Line
                         key={metricKey(event)}
+                        yAxisId="left"
                         dataKey={event.metric}
                         name={event.metric}
                         type="monotone"
                         stroke={COLORS[idx % COLORS.length]}
+                        dot={false}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  {/* Cumulative metrics on right axis */}
+                  {events
+                    .filter((event) => event.metric.startsWith('cumulative_'))
+                    .map((event, idx) => (
+                      <Line
+                        key={metricKey(event)}
+                        yAxisId="right"
+                        dataKey={event.metric}
+                        name={event.metric}
+                        type="monotone"
+                        stroke="#6b7280"
+                        strokeDasharray="5 5"
                         dot={false}
                         strokeWidth={2}
                       />
