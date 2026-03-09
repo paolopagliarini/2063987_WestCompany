@@ -10,7 +10,23 @@ Servizio di notifica real-time per la Mars Habitat Automation Platform.
 - Espone endpoint SSE per il frontend
 - Mantiene uno storico in-memory delle ultime 100 notifiche
 
-## Endpoint API
+## Flusso Dati
+
+```
+RabbitMQ (events.#)
+        ↓
+    Ricezione tutti gli eventi
+        ↓
+    Parsing e generazione notifica
+        ↓
+    Salvataggio in memoria (ultime 100)
+        ↓
+    Broadcast a client SSE connessi
+        ↓
+    Frontend (EventSource)
+```
+
+## Endpoint API REST
 
 | Endpoint | Metodo | Descrizione |
 |----------|--------|-------------|
@@ -39,6 +55,9 @@ data: {"timestamp": "2036-03-05T12:45:30Z"}
 - `keepalive`: Heartbeat ogni 30 secondi
 - Dati: Notifiche in formato JSON
 
+**Connessione iniziale:**
+Alla connessione, il servizio invia le ultime 10 notifiche per dare contesto al client.
+
 ## Modello Notifica
 
 ```json
@@ -65,6 +84,81 @@ data: {"timestamp": "2036-03-05T12:45:30Z"}
 - `warning`: Valore oltre soglia o regola attivata
 - `critical`: Condizione critica
 
+## Generazione Notifiche
+
+Il servizio genera notifiche basandosi sul contenuto dell'evento:
+
+### Eventi con status warning/critical
+```python
+if status == "warning":
+    severity = "warning"
+    message = f"⚠️ {sensor_id}: {metric} = {value} {unit} (WARNING)"
+elif status == "critical":
+    severity = "critical"
+    message = f"🚨 {sensor_id}: {metric} = {value} {unit} (CRITICAL)"
+```
+
+### Eventi da regola attivata
+Quando un evento contiene `rule_id` e `actuator_id`:
+```python
+if rule_id and actuator_id:
+    severity = "warning"
+    message = f"🔧 Rule '{rule_name}' triggered: {sensor_id} {metric}={value}{unit} → {actuator_id}={actuator_action}"
+```
+
+## Endpoint: `/notifications`
+
+Query delle notifiche con filtri opzionali:
+
+```
+GET /notifications?limit=50&severity=warning
+```
+
+Parametri:
+- `limit`: Numero massimo di risultati (1-100, default: 50)
+- `severity`: Filtra per severità (`info`, `warning`, `critical`)
+
+Risposta:
+```json
+{
+  "count": 10,
+  "notifications": [
+    { "notification_id": "...", "message": "...", ... }
+  ]
+}
+```
+
+## Endpoint: `/notifications/stats`
+
+Statistiche aggregate sulle notifiche:
+
+```json
+{
+  "total_notifications": 150,
+  "by_severity": {
+    "info": 80,
+    "warning": 50,
+    "critical": 20
+  },
+  "by_sensor": {
+    "greenhouse_temperature": 45,
+    "hydroponic_ph": 30,
+    ...
+  },
+  "connected_clients": 3
+}
+```
+
+## Variabili d'Ambiente
+
+| Variabile | Default | Descrizione |
+|-----------|---------|-------------|
+| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | URL connessione RabbitMQ |
+| `EXCHANGE_NAME` | `mars_events` | Nome dell'exchange RabbitMQ |
+| `ROUTING_KEY` | `events.#` | Routing key per sottoscrizione |
+| `HOST` | `0.0.0.0` | Host del server HTTP |
+| `PORT` | `8004` | Porta del server HTTP |
+
 ## Configurazione Docker Compose
 
 ```yaml
@@ -90,22 +184,34 @@ notification-service:
     retries: 3
 ```
 
-## Variabili d'Ambiente
-
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | URL connessione RabbitMQ |
-| `EXCHANGE_NAME` | `mars_events` | Nome dell'exchange RabbitMQ |
-| `ROUTING_KEY` | `events.#` | Routing key per sottoscrizione |
-| `HOST` | `0.0.0.0` | Host del server HTTP |
-| `PORT` | `8004` | Porta del server HTTP |
-
-## Dipendenze
+## Dipendenze Python
 
 - `fastapi`: Framework web
 - `uvicorn`: Server ASGI
 - `aio-pika`: Client async per RabbitMQ
 - `pydantic`: Validazione dati
+
+## Coda RabbitMQ
+
+- Nome coda: `notification_queue`
+- Durabilità: `durable=True`
+- TTL messaggi: 24 ore (86400000 ms)
+- Routing key: `events.#` (tutti gli eventi)
+
+## Gestione Client SSE
+
+Il servizio gestisce una lista di client connessi:
+1. Nuova connessione: aggiunge una `asyncio.Queue` alla lista
+2. Nuova notifica: invia a tutte le code
+3. Timeout/disconnessione: rimuove la coda dalla lista
+
+```python
+# Broadcasting a tutti i client
+async def broadcast_notification(notification: Notification):
+    async with sse_clients_lock:
+        for queue in sse_clients:
+            await queue.put(notification)
+```
 
 ## Integrazione Frontend
 
@@ -127,4 +233,15 @@ eventSource.onmessage = (event) => {
 eventSource.addEventListener('keepalive', (event) => {
   console.log('Keepalive received');
 });
+```
+
+## Storage In-Memory
+
+- Massimo 100 notifiche in memoria (configurabile: `MAX_NOTIFICATIONS`)
+- Utilizzo di `collections.deque` con `maxlen` per auto-evizione
+- Persistenza solo durante il lifetime del processo (non persistente tra riavvii)
+
+```python
+from collections import deque
+notifications_store: deque = deque(maxlen=MAX_NOTIFICATIONS)
 ```
