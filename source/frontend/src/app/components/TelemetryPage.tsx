@@ -191,7 +191,7 @@ export function TelemetryPage() {
                 ))}
               </div>
 
-              {/* Chart — always visible */}
+              {/* Chart - always visible */}
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />

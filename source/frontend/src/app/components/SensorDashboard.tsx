@@ -77,7 +77,7 @@ function cacheKey(event: SensorEvent): string {
 export function SensorDashboard() {
   const { data, loading, error } = usePolling(fetchSensorsLatest, 5000);
 
-  // Category filter — null means "all"
+  // Category filter - null means "all"
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   // Which sensor_ids have their chart expanded
@@ -187,7 +187,7 @@ export function SensorDashboard() {
         {filteredGroups.map(([sensorId, events]) => {
           const isExpanded = expanded.has(sensorId);
 
-          // Determine connectivity — newest timestamp in the group
+          // Determine connectivity - newest timestamp in the group
           const newestTs = Math.max(
             ...events.map((e) => new Date(e.timestamp).getTime()),
           );

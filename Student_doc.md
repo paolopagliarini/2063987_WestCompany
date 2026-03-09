@@ -1,6 +1,6 @@
 # SYSTEM DESCRIPTION:
 
-The **Mars Habitat Automation Platform** is a distributed event-driven system designed to monitor and control a Mars habitat's critical infrastructure. The platform ingests heterogeneous sensor data from a simulated IoT environment — both REST-polled sensors and streaming telemetry topics — normalizes all payloads into a unified internal event format, evaluates automation rules, and exposes a real-time dashboard for habitat monitoring and control.
+The **Mars Habitat Automation Platform** is a distributed event-driven system designed to monitor and control a Mars habitat's critical infrastructure. The platform ingests heterogeneous sensor data from a simulated IoT environment - both REST-polled sensors and streaming telemetry topics - normalizes all payloads into a unified internal event format, evaluates automation rules, and exposes a real-time dashboard for habitat monitoring and control.
 
 The system is composed of multiple decoupled microservices communicating through a message broker (RabbitMQ). Automation rules follow an IF–THEN model and are persisted in a PostgreSQL database so they survive service restarts. The latest state of each sensor is maintained in-memory for fast dashboard rendering. Actuators are controlled both manually (via the dashboard) and automatically (when a rule condition is triggered by an incoming sensor event).
 
@@ -67,10 +67,10 @@ SQL Database used to store data, with persistent volumes mounted.
 The container that provides the RabbitMQ message broker for the system.
 
 ### USER STORIES:
-2. As an operator, I want to see the real-time telemetry data from streaming topics...
-3. As an operator, I want the dashboard to update automatically without refreshing the page...
-14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event...
-16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered...
+2. As an operator, I want to see the real-time telemetry data from streaming topics (solar array, radiation, life support, thermal loop, power bus, airlock), so that I can monitor all critical subsystems.
+3. As an operator, I want the dashboard to update automatically without refreshing the page, so that I always see the current state of the habitat.
+14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event, so that the habitat is protected without manual intervention.
+16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered, so that I am immediately aware of critical environmental changes without having to watch every sensor.
 
 ### PORTS: 
 - 5672:5672 (AMQP)
@@ -280,10 +280,10 @@ Event Consumer and API Server.
 The container that provides the ingestion service for the system.
 
 ### USER STORIES:
-1. As an operator, I want to see the real-time value of all REST sensors on the dashboard...
-2. As an operator, I want to see the real-time telemetry data from streaming topics...
-19. As an operator, I want to see all individual measurements from multi-metric sensors displayed together...
-20. As an operator, I want to see the connectivity status of each data source...
+1. As an operator, I want to see the real-time value of all REST sensors on the dashboard, so that I can monitor habitat conditions at a glance.
+2. As an operator, I want to see the real-time telemetry data from streaming topics (solar array, radiation, life support, thermal loop, power bus, airlock), so that I can monitor all critical subsystems.
+19. As an operator, I want to see all individual measurements from multi-metric sensors displayed together (e.g. PM1, PM2.5, PM10 from air_quality_pm25), so that I have complete information from each device in one place.
+20. As an operator, I want to see the connectivity status of each data source (online / offline / degraded), so that I can detect if a sensor or telemetry stream has stopped sending data.
 
 ### PORTS: 
 - 8001:8001

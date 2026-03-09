@@ -1,6 +1,6 @@
 # SYSTEM DESCRIPTION
 
-The **Mars Habitat Automation Platform** is a distributed event-driven system designed to monitor and control a Mars habitat's critical infrastructure. The platform ingests heterogeneous sensor data from a simulated IoT environment — both REST-polled sensors and streaming telemetry topics — normalizes all payloads into a unified internal event format, evaluates automation rules, and exposes a real-time dashboard for habitat monitoring and control.
+The **Mars Habitat Automation Platform** is a distributed event-driven system designed to monitor and control a Mars habitat's critical infrastructure. The platform ingests heterogeneous sensor data from a simulated IoT environment - both REST-polled sensors and streaming telemetry topics - normalizes all payloads into a unified internal event format, evaluates automation rules, and exposes a real-time dashboard for habitat monitoring and control.
 
 The system is composed of multiple decoupled microservices communicating through a message broker (RabbitMQ). Automation rules follow an IF–THEN model and are persisted in a PostgreSQL database so they survive service restarts. The latest state of each sensor is maintained in-memory for fast dashboard rendering. Actuators are controlled both manually (via the dashboard) and automatically (when a rule condition is triggered by an incoming sensor event).
 
@@ -29,7 +29,7 @@ The system is composed of multiple decoupled microservices communicating through
 
 # STANDARD INTERNAL EVENT SCHEMA
 
-All incoming sensor data — regardless of the original device protocol or schema — is normalized into the following unified internal event format before being published to the message broker:
+All incoming sensor data - regardless of the original device protocol or schema - is normalized into the following unified internal event format before being published to the message broker:
 
 ```json
 {
