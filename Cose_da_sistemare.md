@@ -60,19 +60,19 @@ Tutti i microservizi ricevono tutti i messaggi perche i topic hanno tutti lo ste
 
 ## 7. Slides
 - [x] Tradurre slides.
-- [ ] Completare le slide della presentazione.
+- [x] Completare le slide della presentazione.
 
 ---
 
 ## 8. Tecnologie utilizzate
-- [ ] Documentare **tutte le tecnologie utilizzate** nel progetto.
-- [ ] Specificare anche **le versioni** per il report finale.
+- [x] Documentare **tutte le tecnologie utilizzate** nel progetto.
+- [x] Specificare anche **le versioni** per il report finale.
 
 ---
 
 ## 9. README.md
 - [ ] Aggiornare il `README.md`.
-- [ ] Valutare l'inserimento nella cartella `booklets` di **file Markdown aggiuntivi** se ritenuti necessari.
+- [x] Valutare l'inserimento nella cartella `booklets` di **file Markdown aggiuntivi** se ritenuti necessari.
 
 
 

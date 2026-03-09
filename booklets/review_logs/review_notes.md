@@ -95,5 +95,3 @@ Sends also the last 10 notifications on subscription.
 
 #### /notifications/stats:
 Returns statistics about notifications.
-
-
