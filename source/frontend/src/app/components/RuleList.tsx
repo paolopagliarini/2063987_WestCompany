@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchRules, deleteRule, toggleRule, toggleActuator, type Rule } from '@/app/lib/api';
+import { fetchRules, deleteRule, toggleRule, toggleActuator, formatSensorName, type Rule } from '@/app/lib/api';
 
 interface RuleListProps {
   onEditRule: (rule: any) => void;
@@ -116,7 +116,7 @@ export function RuleList({ onEditRule }: RuleListProps) {
                   {rule.name}
                 </td>
                 <td className="px-4 py-3 font-mono text-gray-700">
-                  {rule.sensor_id} {rule.operator} {rule.threshold_value}
+                  {formatSensorName(rule.sensor_id)} {rule.operator} {rule.threshold_value}
                   {rule.threshold_unit ? ` ${rule.threshold_unit}` : ''}
                 </td>
                 <td className="px-4 py-3 font-mono text-gray-700">

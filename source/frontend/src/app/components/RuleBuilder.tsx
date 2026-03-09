@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchSensorsLatest, fetchActuators, createRule, updateRule, type RulePayload } from '@/app/lib/api';
+import { fetchSensorsLatest, fetchActuators, createRule, updateRule, formatSensorName, type RulePayload } from '@/app/lib/api';
 
 interface RuleBuilderProps {
   editingRule?: any | null;
@@ -180,7 +180,7 @@ export function RuleBuilder({ editingRule, onSaved }: RuleBuilderProps) {
             <option value="">Select a sensor</option>
             {sensorIds.map((id) => (
               <option key={id} value={id}>
-                {id}
+                {formatSensorName(id)}
               </option>
             ))}
           </select>
@@ -268,22 +268,20 @@ export function RuleBuilder({ editingRule, onSaved }: RuleBuilderProps) {
             <button
               type="button"
               onClick={() => setActuatorAction('ON')}
-              className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                actuatorAction === 'ON'
+              className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${actuatorAction === 'ON'
                   ? 'border-green-600 bg-green-500 text-white'
                   : 'border-gray-300 bg-gray-100 text-gray-600'
-              }`}
+                }`}
             >
               ON
             </button>
             <button
               type="button"
               onClick={() => setActuatorAction('OFF')}
-              className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                actuatorAction === 'OFF'
+              className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${actuatorAction === 'OFF'
                   ? 'border-red-600 bg-red-500 text-white'
                   : 'border-gray-300 bg-gray-100 text-gray-600'
-              }`}
+                }`}
             >
               OFF
             </button>

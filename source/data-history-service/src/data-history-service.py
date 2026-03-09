@@ -53,7 +53,8 @@ db_engine = None
 write_buffer: list[dict] = []
 buffer_lock = asyncio.Lock()
 
-sensor_cache = deque(maxlen=50)
+sensor_cache = deque(maxlen=200)
+latest_sensor_state = {}
 cache_lock = asyncio.Lock()
 cache_id_counter = 0
 
@@ -132,6 +133,10 @@ async def process_event(message: AbstractIncomingMessage):
             cache_id_counter += 1
             event["_cache_id"] = cache_id_counter
             sensor_cache.append(event)
+            
+            # Keep latest known state for bootstrap snapshot
+            state_key = f"{event.get('sensor_id')}_{event.get('metric')}"
+            latest_sensor_state[state_key] = event
             
         await store_event(event)
         await message.ack()
@@ -247,10 +252,16 @@ async def get_latest_sensors(last_id: int = Query(default=0)):
     current_last_id = last_id
     
     async with cache_lock:
-        for ev in sensor_cache:
-            if ev.get("_cache_id", 0) > last_id:
-                new_events.append(ev)
-                current_last_id = max(current_last_id, ev.get("_cache_id", 0))
+        if last_id == 0:
+            # Bootstrap fetch: return complete latest state
+            new_events = list(latest_sensor_state.values())
+            current_last_id = cache_id_counter
+        else:
+            # Delta fetch
+            for ev in sensor_cache:
+                if ev.get("_cache_id", 0) > last_id:
+                    new_events.append(ev)
+                    current_last_id = max(current_last_id, ev.get("_cache_id", 0))
 
     return {
         "count": len(new_events),

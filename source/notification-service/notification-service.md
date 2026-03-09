@@ -8,7 +8,7 @@ Real-time notification service for the Mars Habitat Automation Platform.
 - Generates notifications for events with `warning` or `critical` status
 - Generates notifications when an automation rule is triggered
 - Exposes SSE endpoint for frontend
-- Maintains in-memory history of the last 100 notifications
+- Maintains in-memory history of the last 100 alerts (no normal telemetry)
 
 ## Data Flow
 
@@ -80,7 +80,7 @@ On connection, the service sends the last 10 notifications to give context to th
 ```
 
 **Severity levels:**
-- `info`: Normal event
+- `info`: Normal event (discarded, not saved as notification)
 - `warning`: Value above threshold or rule triggered
 - `critical`: Critical condition
 

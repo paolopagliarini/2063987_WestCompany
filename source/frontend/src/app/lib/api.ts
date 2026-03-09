@@ -255,3 +255,13 @@ export function fetchActuatorsHealth(): Promise<HealthResponse> {
 export function fetchHistoryHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/api/history/health');
 }
+
+export function formatSensorName(id: string): string {
+  if (!id) return '';
+  const parts = id.split('/');
+  const namePart = parts[parts.length - 1];
+  return namePart
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}

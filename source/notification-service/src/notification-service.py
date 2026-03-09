@@ -102,6 +102,9 @@ def parse_event_to_notification(event_data: dict) -> Optional[Notification]:
             severity = "warning"
             message = f"🔧 Rule '{rule_name}' triggered: {sensor_id} {metric}={value}{unit} → {actuator_id}={actuator_action}"
 
+        if severity == "info":
+            return None
+
         notification = Notification(
             notification_id=str(uuid.uuid4()),
             event_id=event_id,

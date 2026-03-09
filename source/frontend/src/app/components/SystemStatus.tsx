@@ -13,6 +13,7 @@ import {
   fetchActuatorsHealth,
   fetchHistoryHealth,
   NOTIFICATIONS_STREAM_URL,
+  formatSensorName,
   type Notification,
 } from '@/app/lib/api';
 
@@ -201,7 +202,7 @@ export function SystemStatus() {
                         {n.severity}
                       </span>
                     </td>
-                    <td className="px-4 py-2 font-mono text-xs">{n.sensor_id}</td>
+                    <td className="px-4 py-2 font-mono text-xs">{formatSensorName(n.sensor_id)}</td>
                     <td className="px-4 py-2">{n.message}</td>
                   </tr>
                 ))

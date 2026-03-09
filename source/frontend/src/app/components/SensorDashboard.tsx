@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { usePolling } from '@/app/hooks/usePolling';
-import { fetchSensorsLatest, type SensorEvent } from '@/app/lib/api';
+import { fetchSensorsLatest, formatSensorName, type SensorEvent } from '@/app/lib/api';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -44,13 +44,6 @@ const OFFLINE_THRESHOLD_MS = 30_000;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatSensorId(id: string): string {
-  return id
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
 
 /** Group an array of SensorEvents by their sensor_id. */
 function groupBySensorId(
@@ -202,7 +195,7 @@ export function SensorDashboard() {
               {/* Card header */}
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground">
-                  {formatSensorId(sensorId)}
+                  {formatSensorName(sensorId)}
                 </h3>
                 <div className="flex items-center gap-2">
                   {isOffline && (
