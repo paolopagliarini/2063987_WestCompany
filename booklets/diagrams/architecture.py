@@ -11,11 +11,12 @@ from diagrams.onprem.database import PostgreSQL
 graph_attr = {
     "fontsize": "16",
     "splines": "ortho",
-    "nodesep": "1.2",
-    "ranksep": "2",
+    "nodesep": "0.8",
+    "ranksep": "1.5",
     "overlap": "false",
     "sep": "+25",
-    "compound": "true"
+    "compound": "true",
+    "rankdir": "TB"
 }
 
 with Diagram(
@@ -28,46 +29,57 @@ with Diagram(
     with Cluster("Environment Simulator"):
         sim = SystemsManager("IoT Simulator")
 
-    with Cluster("Data Handling"):
-        ingestor = Glue("Ingestor")
-        broker = Activemq("Event Broker")
+    ingestor = Glue("Ingestor")
+    broker = Activemq("Event Broker")
     
     with Cluster("Services"):
+        rule_manager_service = Docker("Rule Manager Service")
         automation_engine = Docker("Automation Engine")
         actuator_control_service = Docker("Actuator Control Service")
         notification_service = Docker("Notification Service")
         data_history_service = Docker("Data History Service")
-        rule_manager_service = Docker("Rule Manager Service")
+        
+        # Force horizontal arrangement of services
+        rule_manager_service - Edge(style="invis") - automation_engine - Edge(style="invis") - actuator_control_service - Edge(style="invis") - notification_service - Edge(style="invis") - data_history_service
     
     db = PostgreSQL("Database")
 
     with Cluster("Frontend"):
         frontend = React("Frontend")
     
-    sim >> Edge(color="darkgreen") >> ingestor
-    ingestor >> Edge(color='darkgreen', style='dotted') >> sim
+    sim >> Edge(color="purple") >> ingestor
 
     ingestor >> Edge(color='purple') >> broker
-    broker >> Edge(color='purple', style='dotted') >> ingestor
-    
-    broker >> Edge(color='blue') >> frontend
+
 
     # DHS
-    broker >> Edge(color='red', label='Normalized Event') >> data_history_service
-    data_history_service >> Edge(color='brown') >> db
+    broker >> Edge(color='orange') >> data_history_service
+    data_history_service >> Edge(color='orange') >> db
+    data_history_service >> Edge(color='blue') >> frontend
+    db >> Edge(color='orange', style='dotted') >> data_history_service
 
     ## ACS
-    broker >> Edge(color='red', label='Actuator Command') >> actuator_control_service
-    actuator_control_service >> Edge(color='grey', label='Available Actuators') >> sim
-    actuator_control_service >> Edge(color='brown', label='Actuator Commands Logs') >> db
+    broker >> Edge(color='darkgreen') >> actuator_control_service
+    actuator_control_service >> Edge(color='darkgreen') >> sim
+    actuator_control_service >> Edge(color='brown') >> db
     db >> Edge(color='brown', style='dotted') >> actuator_control_service
+    actuator_control_service >> Edge(color='brown') >> frontend
 
     ## AE 
-    broker >> Edge(color='red') >> automation_engine
-    automation_engine >> Edge(color='red', style='dotted', label='Rule Triggered') >> broker
-    automation_engine >> Edge(color='brown') >> db
-    db >> Edge(color='brown', style='dotted') >> automation_engine
+    broker >> Edge(color='dark') >> automation_engine
+    automation_engine >> Edge(color='darkgreen') >> broker
+    db >> Edge(color='green') >> automation_engine
+    automation_engine >> Edge(color='blue', style='dotted') >> frontend
 
     ## NS
     broker >> Edge(color='red') >> notification_service
-    notification_service >> Edge(color='blue') >> frontend
+    notification_service >> Edge(color='red') >> frontend
+
+    ## RMS 
+    broker >> Edge(color='darkgreen') >> rule_manager_service
+    rule_manager_service >> Edge(color='green') >> db
+    rule_manager_service >> Edge(color='blue', style='dotted') >> frontend
+
+    ## Frontend
+    frontend >> Edge(color='darkgreen') >> actuator_control_service
+    frontend >> Edge(color='green') >> rule_manager_service
