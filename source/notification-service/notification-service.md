@@ -1,45 +1,45 @@
 # Notification Service
 
-Servizio di notifica real-time per la Mars Habitat Automation Platform.
+Real-time notification service for the Mars Habitat Automation Platform.
 
-## Responsabilità
+## Responsibilities
 
-- Riceve eventi normalizzati da RabbitMQ
-- Genera notifiche per eventi con status `warning` o `critical`
-- Genera notifiche quando una regola di automazione viene attivata
-- Espone endpoint SSE per il frontend
-- Mantiene uno storico in-memory delle ultime 100 notifiche
+- Receives normalized events from RabbitMQ
+- Generates notifications for events with `warning` or `critical` status
+- Generates notifications when an automation rule is triggered
+- Exposes SSE endpoint for frontend
+- Maintains in-memory history of the last 100 notifications
 
-## Flusso Dati
+## Data Flow
 
 ```
 RabbitMQ (events.#)
         ↓
-    Ricezione tutti gli eventi
+    Receive all events
         ↓
-    Parsing e generazione notifica
+    Parse and generate notification
         ↓
-    Salvataggio in memoria (ultime 100)
+    Save to memory (last 100)
         ↓
-    Broadcast a client SSE connessi
+    Broadcast to connected SSE clients
         ↓
     Frontend (EventSource)
 ```
 
-## Endpoint API REST
+## REST API Endpoints
 
-| Endpoint | Metodo | Descrizione |
+| Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check del servizio |
-| `/notifications` | GET | Lista delle ultime notifiche |
-| `/notifications/stream` | GET | SSE endpoint per notifiche real-time |
-| `/notifications/stats` | GET | Statistiche sulle notifiche |
+| `/health` | GET | Service health check |
+| `/notifications` | GET | List of latest notifications |
+| `/notifications/stream` | GET | SSE endpoint for real-time notifications |
+| `/notifications/stats` | GET | Notification statistics |
 
-## Endpoint SSE: `/notifications/stream`
+## SSE Endpoint: `/notifications/stream`
 
-Endpoint Server-Sent Events per ricevere notifiche in tempo reale.
+Server-Sent Events endpoint for receiving real-time notifications.
 
-**Formato messaggi:**
+**Message format:**
 ```
 event: connected
 data: {"status": "connected", "timestamp": "2036-03-05T12:45:00Z"}
@@ -50,15 +50,15 @@ event: keepalive
 data: {"timestamp": "2036-03-05T12:45:30Z"}
 ```
 
-**Eventi inviati:**
-- `connected`: Conferma connessione
-- `keepalive`: Heartbeat ogni 30 secondi
-- Dati: Notifiche in formato JSON
+**Events sent:**
+- `connected`: Connection confirmation
+- `keepalive`: Heartbeat every 30 seconds
+- Data: Notifications in JSON format
 
-**Connessione iniziale:**
-Alla connessione, il servizio invia le ultime 10 notifiche per dare contesto al client.
+**Initial connection:**
+On connection, the service sends the last 10 notifications to give context to the client.
 
-## Modello Notifica
+## Notification Model
 
 ```json
 {
@@ -79,16 +79,16 @@ Alla connessione, il servizio invia le ultime 10 notifiche per dare contesto al 
 }
 ```
 
-**Livelli di severità:**
-- `info`: Evento normale
-- `warning`: Valore oltre soglia o regola attivata
-- `critical`: Condizione critica
+**Severity levels:**
+- `info`: Normal event
+- `warning`: Value above threshold or rule triggered
+- `critical`: Critical condition
 
-## Generazione Notifiche
+## Notification Generation
 
-Il servizio genera notifiche basandosi sul contenuto dell'evento:
+The service generates notifications based on event content:
 
-### Eventi con status warning/critical
+### Events with warning/critical status
 ```python
 if status == "warning":
     severity = "warning"
@@ -98,8 +98,8 @@ elif status == "critical":
     message = f"🚨 {sensor_id}: {metric} = {value} {unit} (CRITICAL)"
 ```
 
-### Eventi da regola attivata
-Quando un evento contiene `rule_id` e `actuator_id`:
+### Events from triggered rule
+When an event contains `rule_id` and `actuator_id`:
 ```python
 if rule_id and actuator_id:
     severity = "warning"
@@ -108,17 +108,17 @@ if rule_id and actuator_id:
 
 ## Endpoint: `/notifications`
 
-Query delle notifiche con filtri opzionali:
+Query notifications with optional filters:
 
 ```
 GET /notifications?limit=50&severity=warning
 ```
 
-Parametri:
-- `limit`: Numero massimo di risultati (1-100, default: 50)
-- `severity`: Filtra per severità (`info`, `warning`, `critical`)
+Parameters:
+- `limit`: Maximum results (1-100, default: 50)
+- `severity`: Filter by severity (`info`, `warning`, `critical`)
 
-Risposta:
+Response:
 ```json
 {
   "count": 10,
@@ -130,7 +130,7 @@ Risposta:
 
 ## Endpoint: `/notifications/stats`
 
-Statistiche aggregate sulle notifiche:
+Aggregated notification statistics:
 
 ```json
 {
@@ -149,17 +149,17 @@ Statistiche aggregate sulle notifiche:
 }
 ```
 
-## Variabili d'Ambiente
+## Environment Variables
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | URL connessione RabbitMQ |
-| `EXCHANGE_NAME` | `mars_events` | Nome dell'exchange RabbitMQ |
-| `ROUTING_KEY` | `events.#` | Routing key per sottoscrizione |
-| `HOST` | `0.0.0.0` | Host del server HTTP |
-| `PORT` | `8004` | Porta del server HTTP |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | RabbitMQ connection URL |
+| `EXCHANGE_NAME` | `mars_events` | RabbitMQ exchange name |
+| `ROUTING_KEY` | `events.#` | Routing key for subscription |
+| `HOST` | `0.0.0.0` | HTTP server host |
+| `PORT` | `8004` | HTTP server port |
 
-## Configurazione Docker Compose
+## Docker Compose Configuration
 
 ```yaml
 notification-service:
@@ -184,38 +184,38 @@ notification-service:
     retries: 3
 ```
 
-## Dipendenze Python
+## Python Dependencies
 
-- `fastapi`: Framework web
-- `uvicorn`: Server ASGI
-- `aio-pika`: Client async per RabbitMQ
-- `pydantic`: Validazione dati
+- `fastapi`: Web framework
+- `uvicorn`: ASGI server
+- `aio-pika`: Async client for RabbitMQ
+- `pydantic`: Data validation
 
-## Coda RabbitMQ
+## RabbitMQ Queue
 
-- Nome coda: `notification_queue`
-- Durabilità: `durable=True`
-- TTL messaggi: 24 ore (86400000 ms)
-- Routing key: `events.#` (tutti gli eventi)
+- Queue name: `notification_queue`
+- Durability: `durable=True`
+- Message TTL: 24 hours (86400000 ms)
+- Routing key: `events.#` (all events)
 
-## Gestione Client SSE
+## SSE Client Management
 
-Il servizio gestisce una lista di client connessi:
-1. Nuova connessione: aggiunge una `asyncio.Queue` alla lista
-2. Nuova notifica: invia a tutte le code
-3. Timeout/disconnessione: rimuove la coda dalla lista
+The service manages a list of connected clients:
+1. New connection: adds an `asyncio.Queue` to the list
+2. New notification: sends to all queues
+3. Timeout/disconnection: removes queue from list
 
 ```python
-# Broadcasting a tutti i client
+# Broadcasting to all clients
 async def broadcast_notification(notification: Notification):
     async with sse_clients_lock:
         for queue in sse_clients:
             await queue.put(notification)
 ```
 
-## Integrazione Frontend
+## Frontend Integration
 
-Esempio di connessione SSE in JavaScript:
+Example SSE connection in JavaScript:
 
 ```javascript
 const eventSource = new EventSource('http://localhost:8004/notifications/stream');
@@ -227,7 +227,7 @@ eventSource.addEventListener('connected', (event) => {
 eventSource.onmessage = (event) => {
   const notification = JSON.parse(event.data);
   console.log('Notification:', notification);
-  // Aggiorna UI con la notifica
+  // Update UI with notification
 };
 
 eventSource.addEventListener('keepalive', (event) => {
@@ -235,11 +235,11 @@ eventSource.addEventListener('keepalive', (event) => {
 });
 ```
 
-## Storage In-Memory
+## In-Memory Storage
 
-- Massimo 100 notifiche in memoria (configurabile: `MAX_NOTIFICATIONS`)
-- Utilizzo di `collections.deque` con `maxlen` per auto-evizione
-- Persistenza solo durante il lifetime del processo (non persistente tra riavvii)
+- Maximum 100 notifications in memory (configurable: `MAX_NOTIFICATIONS`)
+- Uses `collections.deque` with `maxlen` for auto-eviction
+- Persistence only during process lifetime (not persistent across restarts)
 
 ```python
 from collections import deque

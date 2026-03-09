@@ -1,33 +1,33 @@
 # Rule Manager Service
 
-Servizio di gestione regole per la Mars Habitat Automation Platform.
+Rule management service for the Mars Habitat Automation Platform.
 
-## Responsabilità
+## Responsibilities
 
-- Fornisce API REST CRUD per le regole di automazione
-- Validazione della sintassi delle regole (operatori, azioni)
-- Persistenza su PostgreSQL
-- Endpoint per attivazione/disattivazione regole
+- Provides CRUD REST API for automation rules
+- Validation of rule syntax (operators, actions)
+- Persistence to PostgreSQL
+- Endpoint for enabling/disabling rules
 
-## Endpoint API REST
+## REST API Endpoints
 
-| Endpoint | Metodo | Descrizione |
+| Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check con stato DB |
-| `/rules` | GET | Lista tutte le regole |
-| `/rules` | POST | Crea nuova regola |
-| `/rules/{id}` | GET | Dettaglio regola |
-| `/rules/{id}` | PUT | Aggiorna regola (partial update) |
-| `/rules/{id}` | DELETE | Elimina regola |
-| `/rules/{id}/toggle` | PATCH | Attiva/disattiva regola |
+| `/health` | GET | Health check with DB status |
+| `/rules` | GET | List all rules |
+| `/rules` | POST | Create new rule |
+| `/rules/{id}` | GET | Rule details |
+| `/rules/{id}` | PUT | Update rule (partial update) |
+| `/rules/{id}` | DELETE | Delete rule |
+| `/rules/{id}/toggle` | PATCH | Enable/disable rule |
 
-## Modello Regola
+## Rule Model
 
 ```json
 {
   "id": 1,
   "name": "Temperature High",
-  "description": "Attiva raffreddamento se temperatura > 28C",
+  "description": "Activate cooling if temperature > 28C",
   "sensor_id": "greenhouse_temperature",
   "operator": ">",
   "threshold_value": 28.0,
@@ -40,21 +40,21 @@ Servizio di gestione regole per la Mars Habitat Automation Platform.
 }
 ```
 
-## Validazione
+## Validation
 
-### Operatori Supportati
+### Supported Operators
 
 ```python
 VALID_OPERATORS = ("<", "<=", "=", ">", ">=")
 ```
 
-### Azioni Supportate
+### Supported Actions
 
 ```python
 VALID_ACTIONS = ("ON", "OFF")
 ```
 
-La validazione avviene tramite Pydantic:
+Validation is performed via Pydantic:
 ```python
 @field_validator("operator")
 @classmethod
@@ -72,7 +72,7 @@ def validate_action(cls, v):
     return v_upper
 ```
 
-## Creazione Regola
+## Rule Creation
 
 **Request:**
 ```bash
@@ -81,7 +81,7 @@ Content-Type: application/json
 
 {
   "name": "Temperature High",
-  "description": "Attiva raffreddamento se temperatura > 28C",
+  "description": "Activate cooling if temperature > 28C",
   "sensor_id": "greenhouse_temperature",
   "operator": ">",
   "threshold_value": 28.0,
@@ -96,7 +96,7 @@ Content-Type: application/json
 {
   "id": 1,
   "name": "Temperature High",
-  "description": "Attiva raffreddamento se temperatura > 28C",
+  "description": "Activate cooling if temperature > 28C",
   "sensor_id": "greenhouse_temperature",
   "operator": ">",
   "threshold_value": 28.0,
@@ -109,7 +109,7 @@ Content-Type: application/json
 }
 ```
 
-## Aggiornamento Regola
+## Rule Update
 
 **Request (Partial Update):**
 ```bash
@@ -122,15 +122,15 @@ Content-Type: application/json
 }
 ```
 
-Solo i campi forniti vengono aggiornati.
+Only provided fields are updated.
 
-## Toggle Regola
+## Rule Toggle
 
 ```bash
 PATCH /rules/1/toggle
 ```
 
-Attiva se disattiva, disattiva se attiva. Utile per attivazione rapida senza body.
+Activates if inactive, deactivates if active. Useful for quick activation without body.
 
 **Response:**
 ```json
@@ -140,7 +140,7 @@ Attiva se disattiva, disattiva se attiva. Utile per attivazione rapida senza bod
 }
 ```
 
-## Eliminazione Regola
+## Rule Deletion
 
 ```bash
 DELETE /rules/1
@@ -154,12 +154,12 @@ DELETE /rules/1
 }
 ```
 
-## Schema Database
+## Database Schema
 
-Tabella `automation_rules`:
+`automation_rules` table:
 
-| Campo | Tipo | Vincoli |
-|-------|------|---------|
+| Field | Type | Constraints |
+|-------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
 | name | VARCHAR(100) | NOT NULL |
 | description | TEXT | |
@@ -173,20 +173,20 @@ Tabella `automation_rules`:
 | created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
 | updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
 
-Constraint CHECK:
+CHECK constraint:
 ```sql
 CONSTRAINT valid_operator CHECK (operator IN ('<', '<=', '=', '>', '>='))
 ```
 
-## Variabili d'Ambiente
+## Environment Variables
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `DATABASE_URL` | `postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat` | Connessione PostgreSQL |
-| `HOST` | `0.0.0.0` | Host server HTTP |
-| `PORT` | `8003` | Porta server HTTP |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat` | PostgreSQL connection |
+| `HOST` | `0.0.0.0` | HTTP server host |
+| `PORT` | `8003` | HTTP server port |
 
-## Configurazione Docker Compose
+## Docker Compose Configuration
 
 ```yaml
 rule-manager-service:
@@ -209,32 +209,32 @@ rule-manager-service:
     retries: 3
 ```
 
-## Dipendenze Python
+## Python Dependencies
 
-- `fastapi`: Framework web asincrono
-- `uvicorn`: Server ASGI
-- `sqlalchemy`: ORM async per PostgreSQL
-- `asyncpg`: Driver async PostgreSQL
-- `pydantic`: Validazione dati
+- `fastapi`: Async web framework
+- `uvicorn`: ASGI server
+- `sqlalchemy`: Async ORM for PostgreSQL
+- `asyncpg`: Async PostgreSQL driver
+- `pydantic`: Data validation
 
 ## Pydantic Schemas
 
 ### RuleCreate
-Per la creazione di nuove regole:
+For creating new rules:
 ```python
 class RuleCreate(BaseModel):
     name: str
     description: Optional[str] = None
     sensor_id: str
-    operator: str  # Validato: <, <=, =, >, >=
+    operator: str  # Validated: <, <=, =, >, >=
     threshold_value: float
     threshold_unit: Optional[str] = None
     actuator_id: str
-    actuator_action: str  # Validato: ON, OFF
+    actuator_action: str  # Validated: ON, OFF
 ```
 
 ### RuleUpdate
-Per aggiornamenti parziali:
+For partial updates:
 ```python
 class RuleUpdate(BaseModel):
     name: Optional[str] = None
@@ -248,31 +248,31 @@ class RuleUpdate(BaseModel):
     is_active: Optional[bool] = None
 ```
 
-## Integrazione con Automation Engine
+## Integration with Automation Engine
 
-L'automation engine:
-1. Carica le regole attive (`is_active = TRUE`) all'avvio
-2. Ricarica periodicamente ogni `RULES_RELOAD_INTERVAL` secondi
-3. Valuta le condizioni degli eventi in arrivo
-4. Pubblica comandi per gli attuatori quando le condizioni sono soddisfatte
+The automation engine:
+1. Loads active rules (`is_active = TRUE`) at startup
+2. Periodically reloads every `RULES_RELOAD_INTERVAL` seconds
+3. Evaluates conditions of incoming events
+4. Publishes commands to actuators when conditions are met
 
-Il Rule Manager non comunica direttamente con l'automation engine - la sincronizzazione avviene tramite il database.
+The Rule Manager does not communicate directly with the automation engine - synchronization occurs through the database.
 
 ## Best Practices
 
-1. **Nomi descrittivi**: Usare nomi chiari per le regole
-2. **Descrizioni**: Documentare lo scopo della regola
-3. **Unità coerenti**: Specificare sempre l'unità di misura
-4. **Test**: Verificare le regole con dati reali prima di attivarle
-5. **Monitoraggio**: Controllare i log dell'automation engine per verificare le attivazioni
+1. **Descriptive names**: Use clear names for rules
+2. **Descriptions**: Document the purpose of the rule
+3. **Consistent units**: Always specify the unit of measurement
+4. **Testing**: Verify rules with real data before activating them
+5. **Monitoring**: Check automation engine logs to verify activations
 
-## Esempi di Regole
+## Rule Examples
 
-### Controllo Temperatura
+### Temperature Control
 ```json
 {
   "name": "Temperature High",
-  "description": "Attiva raffreddamento se temperatura > 28C",
+  "description": "Activate cooling if temperature > 28C",
   "sensor_id": "greenhouse_temperature",
   "operator": ">",
   "threshold_value": 28,
@@ -282,11 +282,11 @@ Il Rule Manager non comunica direttamente con l'automation engine - la sincroniz
 }
 ```
 
-### Controllo CO2
+### CO2 Control
 ```json
 {
   "name": "CO2 High",
-  "description": "Attiva ventilazione se CO2 > 1000 ppm",
+  "description": "Activate ventilation if CO2 > 1000 ppm",
   "sensor_id": "co2_hall",
   "operator": ">",
   "threshold_value": 1000,
@@ -296,11 +296,11 @@ Il Rule Manager non comunica direttamente con l'automation engine - la sincroniz
 }
 ```
 
-### Disattivazione Automatica
+### Automatic Deactivation
 ```json
 {
   "name": "Temperature Normal",
-  "description": "Spegni raffreddamento se temperatura < 25C",
+  "description": "Turn off cooling if temperature < 25C",
   "sensor_id": "greenhouse_temperature",
   "operator": "<",
   "threshold_value": 25,

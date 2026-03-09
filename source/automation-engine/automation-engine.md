@@ -1,34 +1,34 @@
 # Automation Engine
 
-Motore di automazione per la Mars Habitat Automation Platform.
+Automation engine for the Mars Habitat Automation Platform.
 
-## Responsabilità
+## Responsibilities
 
-- Sottoscrive eventi normalizzati dei sensori da RabbitMQ
-- Carica le regole di automazione attive dal database PostgreSQL
-- Valuta le condizioni delle regole contro i valori degli eventi
-- Pubblica comandi per gli attuatori quando le condizioni sono soddisfatte
-- Ricarica periodicamente le regole dal database
+- Subscribes to normalized sensor events from RabbitMQ
+- Loads active automation rules from PostgreSQL database
+- Evaluates rule conditions against event values
+- Publishes actuator commands when conditions are met
+- Periodically reloads rules from the database
 
-## Flusso di Esecuzione
+## Execution Flow
 
 ```
 RabbitMQ (events.sensor.#)
         ↓
-    Ricezione evento normalizzato
+    Receive normalized event
         ↓
-    Parsing JSON (sensor_id, value, metric)
+    JSON parsing (sensor_id, value, metric)
         ↓
-    Filtro regole matching (per sensor_id)
+    Filter matching rules (by sensor_id)
         ↓
-    Valutazione condizione (value OPERATOR threshold)
+    Evaluate condition (value OPERATOR threshold)
         ↓
-    Se vero → Pubblica comando su RabbitMQ
+    If true → Publish command to RabbitMQ
         ↓
-    ACK messaggio
+    ACK message
 ```
 
-## Modello Evento (Input)
+## Event Model (Input)
 
 ```json
 {
@@ -44,7 +44,7 @@ RabbitMQ (events.sensor.#)
 }
 ```
 
-## Modello Comando (Output)
+## Command Model (Output)
 
 ```json
 {
@@ -66,45 +66,45 @@ RabbitMQ (events.sensor.#)
 }
 ```
 
-## Operatori Supportati
+## Supported Operators
 
-| Operatore | Descrizione |
-|-----------|-------------|
-| `<` | Minore di |
-| `<=` | Minore o uguale |
-| `=` | Uguale |
-| `>` | Maggiore di |
-| `>=` | Maggiore o uguale |
+| Operator | Description |
+|----------|-------------|
+| `<` | Less than |
+| `<=` | Less than or equal |
+| `=` | Equal |
+| `>` | Greater than |
+| `>=` | Greater than or equal |
 
-## Matching Regole
+## Rule Matching
 
-Le regole vengono matchate per `sensor_id`. Il motore supporta due modalità:
-1. Match diretto: `sensor_id` della regola = `sensor_id` dell'evento
-2. Match combinato: `sensor_id` della regola = `sensor_id_metric` dell'evento
+Rules are matched by `sensor_id`. The engine supports two modes:
+1. Direct match: rule's `sensor_id` = event's `sensor_id`
+2. Combined match: rule's `sensor_id` = event's `sensor_id_metric`
 
-Esempio: Se l'evento ha `sensor_id: "hydroponic_ph"` e `metric: "ph"`, una regola con `sensor_id: "hydroponic_ph_ph"` verrà matchata.
+Example: If an event has `sensor_id: "hydroponic_ph"` and `metric: "ph"`, a rule with `sensor_id: "hydroponic_ph_ph"` will be matched.
 
-## Endpoint API REST
+## REST API Endpoints
 
-| Endpoint | Metodo | Descrizione |
+| Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check con stato e statistiche |
-| `/rules/active` | GET | Lista regole attive in cache |
-| `/rules/reload` | POST | Forza ricaricamento regole dal DB |
+| `/health` | GET | Health check with status and statistics |
+| `/rules/active` | GET | List active rules in cache |
+| `/rules/reload` | POST | Force reload rules from DB |
 
-## Variabili d'Ambiente
+## Environment Variables
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `DATABASE_URL` | `postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat` | Connessione PostgreSQL |
-| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | URL connessione RabbitMQ |
-| `EXCHANGE_NAME` | `mars_events` | Nome exchange RabbitMQ |
-| `ROUTING_KEY` | `events.sensor.#` | Routing key per sottoscrizione eventi |
-| `HOST` | `0.0.0.0` | Host server HTTP |
-| `PORT` | `8002` | Porta server HTTP |
-| `RULES_RELOAD_INTERVAL` | `30` | Intervallo (secondi) di ricaricamento regole |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat` | PostgreSQL connection |
+| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | RabbitMQ connection URL |
+| `EXCHANGE_NAME` | `mars_events` | RabbitMQ exchange name |
+| `ROUTING_KEY` | `events.sensor.#` | Routing key for event subscription |
+| `HOST` | `0.0.0.0` | HTTP server host |
+| `PORT` | `8002` | HTTP server port |
+| `RULES_RELOAD_INTERVAL` | `30` | Rules reload interval (seconds) |
 
-## Configurazione Docker Compose
+## Docker Compose Configuration
 
 ```yaml
 automation-engine:
@@ -133,39 +133,39 @@ automation-engine:
     retries: 3
 ```
 
-## Dipendenze Python
+## Python Dependencies
 
-- `fastapi`: Framework web asincrono
-- `uvicorn`: Server ASGI
-- `aio-pika`: Client async per RabbitMQ
-- `sqlalchemy`: ORM async per PostgreSQL
-- `asyncpg`: Driver async PostgreSQL
+- `fastapi`: Async web framework
+- `uvicorn`: ASGI server
+- `aio-pika`: Async client for RabbitMQ
+- `sqlalchemy`: Async ORM for PostgreSQL
+- `asyncpg`: Async PostgreSQL driver
 
-## Cache Regole
+## Rule Cache
 
-Le regole vengono caricate all'avvio e ricaricate ogni `RULES_RELOAD_INTERVAL` secondi. Questo permette di:
-- Aggiornare le regole senza riavviare il servizio
-- Abilitare/disabilitare regole dinamicamente
-- Minimizzare le query al database
+Rules are loaded at startup and reloaded every `RULES_RELOAD_INTERVAL` seconds. This allows:
+- Updating rules without restarting the service
+- Dynamically enabling/disabling rules
+- Minimizing database queries
 
-## Statistiche
+## Statistics
 
-Il servizio traccia le seguenti statistiche:
-- `events_received`: Eventi ricevuti da RabbitMQ
-- `rules_evaluated`: Regole valutate
-- `rules_triggered`: Regole che hanno soddisfatto la condizione
-- `commands_published`: Comandi pubblicati verso gli attuatori
+The service tracks the following statistics:
+- `events_received`: Events received from RabbitMQ
+- `rules_evaluated`: Rules evaluated
+- `rules_triggered`: Rules that met conditions
+- `commands_published`: Commands published to actuators
 
-## Coda RabbitMQ
+## RabbitMQ Queue
 
-- Nome coda: `automation_engine_queue`
-- Durabilità: `durable=True`
-- TTL messaggi: 60 secondi (le regole devono essere valutate rapidamente)
+- Queue name: `automation_engine_queue`
+- Durability: `durable=True`
+- Message TTL: 60 seconds (rules must be evaluated quickly)
 - Prefetch count: 10
 
-## Esempio di Regola
+## Rule Example
 
-Database: Tabella `automation_rules`
+Database: `automation_rules` table
 
 ```sql
 INSERT INTO automation_rules (
@@ -173,7 +173,7 @@ INSERT INTO automation_rules (
     threshold_unit, actuator_id, actuator_action, is_active
 ) VALUES (
     'Temperature High',
-    'Attiva raffreddamento se temperatura > 28C',
+    'Activate cooling if temperature > 28C',
     'greenhouse_temperature',
     '>',
     28,
@@ -184,4 +184,4 @@ INSERT INTO automation_rules (
 );
 ```
 
-Quando `greenhouse_temperature` riporta un valore > 28°C, il motore pubblica un comando per accendere `cooling_fan`.
+When `greenhouse_temperature` reports a value > 28°C, the engine publishes a command to turn on `cooling_fan`.

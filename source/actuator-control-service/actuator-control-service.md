@@ -1,46 +1,46 @@
 # Actuator Control Service
 
-Servizio di controllo attuatori per la Mars Habitat Automation Platform.
+Actuator control service for the Mars Habitat Automation Platform.
 
-## Responsabilità
+## Responsibilities
 
-- Sottoscrive i comandi degli attuatori da RabbitMQ (pubblicati dall'automation-engine)
-- Esegue i comandi chiamando l'API REST del simulatore IoT
-- Mantiene uno stato in-memory degli attuatori
-- Registra tutti i comandi eseguiti nel database PostgreSQL (tabella `actuator_commands`)
-- Espone API REST per controllo manuale e ispezione stato
+- Subscribes to actuator commands from RabbitMQ (published by automation-engine)
+- Executes commands by calling the IoT simulator REST API
+- Maintains an in-memory state of actuators
+- Logs all executed commands to the PostgreSQL database (`actuator_commands` table)
+- Exposes REST API for manual control and state inspection
 
-## Endpoint API REST
+## REST API Endpoints
 
-| Endpoint | Metodo | Descrizione |
+| Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check del servizio con statistiche |
-| `/actuators` | GET | Lista stati attuatori (aggiornati dal simulatore) |
-| `/actuators/{id}` | GET | Stato di un attuatore specifico |
-| `/actuators/{id}` | POST | Controllo manuale attuatore (body: `{"state": "ON"|"OFF"}`) |
-| `/actuators/{id}/history` | GET | Storico comandi per attuatore |
+| `/health` | GET | Service health check with statistics |
+| `/actuators` | GET | List actuator states (updated from simulator) |
+| `/actuators/{id}` | GET | State of a specific actuator |
+| `/actuators/{id}` | POST | Manual actuator control (body: `{"state": "ON"|"OFF"}`) |
+| `/actuators/{id}/history` | GET | Command history for an actuator |
 
-## Flusso di Esecuzione
+## Execution Flow
 
 ```
 RabbitMQ (commands.actuator.#)
         ↓
-    Ricezione messaggio
+    Message received
         ↓
-    Parsing comando JSON
+    JSON command parsing
         ↓
-    Verifica stato attuale (skip se invariato)
+    Check current state (skip if unchanged)
         ↓
-    Chiamata API simulatore (/api/actuators/{id})
+    Call simulator API (/api/actuators/{id})
         ↓
-    Aggiornamento cache in-memory
+    Update in-memory cache
         ↓
-    Log nel database (actuator_commands)
+    Log to database (actuator_commands)
         ↓
-    ACK messaggio RabbitMQ
+    ACK RabbitMQ message
 ```
 
-## Modello Comando (da RabbitMQ)
+## Command Model (from RabbitMQ)
 
 ```json
 {
@@ -62,9 +62,9 @@ RabbitMQ (commands.actuator.#)
 }
 ```
 
-## Controllo Manuale
+## Manual Control
 
-Per controllare manualmente un attuatore:
+To manually control an actuator:
 
 ```bash
 curl -X POST http://localhost:8005/actuators/cooling_fan \
@@ -72,37 +72,37 @@ curl -X POST http://localhost:8005/actuators/cooling_fan \
   -d '{"state": "ON"}'
 ```
 
-Il servizio:
-1. Chiama il simulatore IoT
-2. Aggiorna la cache locale
-3. Registra il comando con source="manual"
+The service:
+1. Calls the IoT simulator
+2. Updates the local cache
+3. Logs the command with source="manual"
 
-## Database: Tabella actuator_commands
+## Database: actuator_commands Table
 
-| Campo | Tipo | Descrizione |
+| Field | Type | Description |
 |-------|------|-------------|
-| id | BIGSERIAL | Identificativo univoco |
-| actuator_id | VARCHAR(100) | ID attuatore |
-| previous_state | VARCHAR(20) | Stato precedente |
-| new_state | VARCHAR(20) | Nuovo stato |
-| source | VARCHAR(50) | Fonte: "automation-engine" o "manual" |
-| reason | TEXT | Motivazione (es. regola triggerata) |
-| rule_id | INTEGER | ID regola (se automatizzato) |
-| executed_at | TIMESTAMP | Data/ora esecuzione |
+| id | BIGSERIAL | Unique identifier |
+| actuator_id | VARCHAR(100) | Actuator ID |
+| previous_state | VARCHAR(20) | Previous state |
+| new_state | VARCHAR(20) | New state |
+| source | VARCHAR(50) | Source: "automation-engine" or "manual" |
+| reason | TEXT | Reason (e.g., triggered rule) |
+| rule_id | INTEGER | Rule ID (if automated) |
+| executed_at | TIMESTAMP | Execution timestamp |
 
-## Variabili d'Ambiente
+## Environment Variables
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `SIMULATOR_URL` | `http://localhost:8080` | URL del simulatore IoT |
-| `DATABASE_URL` | `postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat` | Connessione PostgreSQL |
-| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | URL connessione RabbitMQ |
-| `EXCHANGE_NAME` | `mars_events` | Nome exchange RabbitMQ |
-| `COMMAND_ROUTING_KEY` | `commands.actuator.#` | Routing key per comandi |
-| `HOST` | `0.0.0.0` | Host server HTTP |
-| `PORT` | `8005` | Porta server HTTP |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SIMULATOR_URL` | `http://localhost:8080` | IoT simulator URL |
+| `DATABASE_URL` | `postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat` | PostgreSQL connection |
+| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | RabbitMQ connection URL |
+| `EXCHANGE_NAME` | `mars_events` | RabbitMQ exchange name |
+| `COMMAND_ROUTING_KEY` | `commands.actuator.#` | Routing key for commands |
+| `HOST` | `0.0.0.0` | HTTP server host |
+| `PORT` | `8005` | HTTP server port |
 
-## Configurazione Docker Compose
+## Docker Compose Configuration
 
 ```yaml
 actuator-control-service:
@@ -131,19 +131,19 @@ actuator-control-service:
     retries: 3
 ```
 
-## Dipendenze Python
+## Python Dependencies
 
-- `fastapi`: Framework web asincrono
-- `uvicorn`: Server ASGI
-- `aio-pika`: Client async per RabbitMQ
-- `httpx`: Client HTTP async per chiamate al simulatore
-- `sqlalchemy`: ORM async per PostgreSQL
-- `asyncpg`: Driver async PostgreSQL
-- `pydantic`: Validazione dati
+- `fastapi`: Async web framework
+- `uvicorn`: ASGI server
+- `aio-pika`: Async client for RabbitMQ
+- `httpx`: Async HTTP client for simulator calls
+- `sqlalchemy`: Async ORM for PostgreSQL
+- `asyncpg`: Async PostgreSQL driver
+- `pydantic`: Data validation
 
-## Statistiche
+## Statistics
 
-Il servizio traccia le seguenti statistiche:
-- `commands_received`: Comandi ricevuti da RabbitMQ
-- `commands_executed`: Comandi eseguiti con successo
-- `commands_failed`: Comandi falliti
+The service tracks the following statistics:
+- `commands_received`: Commands received from RabbitMQ
+- `commands_executed`: Successfully executed commands
+- `commands_failed`: Failed commands

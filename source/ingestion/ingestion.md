@@ -1,35 +1,35 @@
 # Ingestion Service
 
-Servizio di acquisizione dati per la Mars Habitat Automation Platform.
+Data acquisition service for the Mars Habitat Automation Platform.
 
-## Responsabilità
+## Responsibilities
 
-- Polling periodico dei sensori REST dal simulatore IoT
-- Sottoscrizione a 7 topic di telemetria via SSE (Server-Sent Events)
-- Normalizzazione di tutti i payload in uno schema unificato
-- Pubblicazione eventi normalizzati su RabbitMQ
-- Cache in-memory degli ultimi valori letti
+- Periodic polling of REST sensors from IoT simulator
+- Subscription to 7 telemetry topics via SSE (Server-Sent Events)
+- Normalization of all payloads to a unified schema
+- Publishing normalized events to RabbitMQ
+- In-memory cache of latest read values
 
-## Flusso Dati
+## Data Flow
 
 ```
 IoT Simulator (port 8080)
         ↓
-    Polling REST (POLL_INTERVAL)
+    REST Polling (POLL_INTERVAL)
     SSE Streams (7 topics)
         ↓
     Schema Detection
         ↓
-    Normalizzazione (schema unificato)
+    Normalization (unified schema)
         ↓
-    Pubblicazione su RabbitMQ (events.sensor.{sensor_id})
+    Publish to RabbitMQ (events.sensor.{sensor_id})
         ↓
-    Consumer: automation-engine, data-history, notification-service
+    Consumers: automation-engine, data-history, notification-service
 ```
 
-## Schema Unificato Evento
+## Unified Event Schema
 
-Tutti i dati vengono normalizzati in questo formato:
+All data is normalized to this format:
 
 ```json
 {
@@ -45,46 +45,46 @@ Tutti i dati vengono normalizzati in questo formato:
 }
 ```
 
-Campi:
-- `event_id`: UUID univoco per ogni evento
-- `sensor_id`: Identificativo del sensore
-- `timestamp`: Timestamp ISO 8601
-- `metric`: Nome della metrica (es. "temperature", "ph")
-- `value`: Valore numerico
-- `unit`: Unità di misura
-- `source`: "rest" (polling) o "stream" (telemetria)
-- `status`: "ok" o "warning"
-- `raw_schema`: Schema originale (es. "rest.scalar.v1")
+Fields:
+- `event_id`: Unique UUID for each event
+- `sensor_id`: Sensor identifier
+- `timestamp`: ISO 8601 timestamp
+- `metric`: Metric name (e.g., "temperature", "ph")
+- `value`: Numeric value
+- `unit`: Unit of measurement
+- `source`: "rest" (polling) or "stream" (telemetry)
+- `status`: "ok" or "warning"
+- `raw_schema`: Original schema (e.g., "rest.scalar.v1")
 
-## Sensori REST e Schemi
+## REST Sensors and Schemas
 
-| Sensore | Schema | Note |
-|---------|--------|------|
-| `greenhouse_temperature` | `rest.scalar.v1` | Singolo valore |
-| `entrance_humidity` | `rest.scalar.v1` | Singolo valore |
-| `co2_hall` | `rest.scalar.v1` | Singolo valore |
-| `corridor_pressure` | `rest.scalar.v1` | Singolo valore |
-| `hydroponic_ph` | `rest.chemistry.v1` | Array misurazioni |
-| `air_quality_voc` | `rest.chemistry.v1` | Array misurazioni |
+| Sensor | Schema | Notes |
+|--------|--------|-------|
+| `greenhouse_temperature` | `rest.scalar.v1` | Single value |
+| `entrance_humidity` | `rest.scalar.v1` | Single value |
+| `co2_hall` | `rest.scalar.v1` | Single value |
+| `corridor_pressure` | `rest.scalar.v1` | Single value |
+| `hydroponic_ph` | `rest.chemistry.v1` | Measurements array |
+| `air_quality_voc` | `rest.chemistry.v1` | Measurements array |
 | `air_quality_pm25` | `rest.particulate.v1` | PM1, PM2.5, PM10 |
-| `water_tank_level` | `rest.level.v1` | Percentuale e litri |
+| `water_tank_level` | `rest.level.v1` | Percentage and liters |
 
-## Topic Telemetria e Schemi
+## Telemetry Topics and Schemas
 
-| Topic | Schema | Metriche |
-|-------|--------|----------|
+| Topic | Schema | Metrics |
+|-------|--------|---------|
 | `mars/telemetry/solar_array` | `topic.power.v1` | power_kw, voltage_v, current_a, cumulative_kwh |
 | `mars/telemetry/power_bus` | `topic.power.v1` | power_kw, voltage_v, current_a, cumulative_kwh |
 | `mars/telemetry/power_consumption` | `topic.power.v1` | power_kw, voltage_v, current_a, cumulative_kwh |
-| `mars/telemetry/radiation` | `topic.environment.v1` | Array misurazioni |
-| `mars/telemetry/life_support` | `topic.environment.v1` | Array misurazioni |
+| `mars/telemetry/radiation` | `topic.environment.v1` | Measurements array |
+| `mars/telemetry/life_support` | `topic.environment.v1` | Measurements array |
 | `mars/telemetry/thermal_loop` | `topic.thermal_loop.v1` | temperature_c, flow_l_min |
 | `mars/telemetry/airlock` | `topic.airlock.v1` | cycles_per_hour |
 
-## Normalizzatori
+## Normalizers
 
 ### rest.scalar.v1
-Singolo evento diretto:
+Direct single event:
 ```python
 def normalize_scalar(data: dict) -> list[dict]:
     return [_make_event(
@@ -100,59 +100,59 @@ def normalize_scalar(data: dict) -> list[dict]:
 ```
 
 ### rest.chemistry.v1
-Un evento per ogni misurazione nell'array:
+One event per measurement in array:
 ```python
 # Input: {"sensor_id": "hydroponic_ph", "measurements": [{"metric": "ph", "value": 6.5, "unit": "pH"}]}
-# Output: [Evento con metric="ph", value=6.5, unit="pH"]
+# Output: [Event with metric="ph", value=6.5, unit="pH"]
 ```
 
 ### rest.particulate.v1
-Tre eventi: pm1, pm2.5, pm10:
+Three events: pm1, pm2.5, pm10:
 ```python
-# Output: 3 eventi con metric "pm1", "pm2.5", "pm10"
+# Output: 3 events with metrics "pm1", "pm2.5", "pm10"
 ```
 
 ### rest.level.v1
-Due eventi: percentuale e litri:
+Two events: percentage and liters:
 ```python
-# Output: 2 eventi con metric "level_pct" e "level_liters"
+# Output: 2 events with metrics "level_pct" and "level_liters"
 ```
 
 ### topic.power.v1
-Eventi per ogni metrica di potenza:
+Events for each power metric:
 ```python
-# Output: 4 eventi (power_kw, voltage_v, current_a, cumulative_kwh)
+# Output: 4 events (power_kw, voltage_v, current_a, cumulative_kwh)
 ```
 
 ### topic.environment.v1
-Un evento per ogni misurazione nell'array.
+One event per measurement in array.
 
 ### topic.thermal_loop.v1
-Due eventi: temperatura e flusso.
+Two events: temperature and flow.
 
 ### topic.airlock.v1
-Un evento con `last_state` codificato in `status`.
+One event with `last_state` encoded in `status`.
 
-## Endpoint API REST
+## REST API Endpoints
 
-| Endpoint | Metodo | Descrizione |
+| Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check con stato connessione RabbitMQ |
-| `/sensors/latest` | GET | Cache di tutti gli ultimi valori |
-| `/sensors/latest/{sensor_id}` | GET | Ultimi valori per sensore specifico |
+| `/health` | GET | Health check with RabbitMQ connection status |
+| `/sensors/latest` | GET | Cache of all latest values |
+| `/sensors/latest/{sensor_id}` | GET | Latest values for specific sensor |
 
-## Variabili d'Ambiente
+## Environment Variables
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `SIMULATOR_URL` | `http://localhost:8080` | URL del simulatore IoT |
-| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | URL connessione RabbitMQ |
-| `EXCHANGE_NAME` | `mars_events` | Nome exchange RabbitMQ |
-| `POLL_INTERVAL` | `10` | Intervallo polling REST (secondi) |
-| `HOST` | `0.0.0.0` | Host server HTTP |
-| `PORT` | `8001` | Porta server HTTP |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SIMULATOR_URL` | `http://localhost:8080` | IoT simulator URL |
+| `RABBITMQ_URL` | `amqp://guest:guest@messagging:5672/` | RabbitMQ connection URL |
+| `EXCHANGE_NAME` | `mars_events` | RabbitMQ exchange name |
+| `POLL_INTERVAL` | `10` | REST polling interval (seconds) |
+| `HOST` | `0.0.0.0` | HTTP server host |
+| `PORT` | `8001` | HTTP server port |
 
-## Configurazione Docker Compose
+## Docker Compose Configuration
 
 ```yaml
 ingestion:
@@ -178,36 +178,36 @@ ingestion:
     retries: 3
 ```
 
-## Dipendenze Python
+## Python Dependencies
 
-- `fastapi`: Framework web asincrono
-- `uvicorn`: Server ASGI
-- `aio-pika`: Client async per RabbitMQ
-- `httpx`: Client HTTP async per polling e SSE
+- `fastapi`: Async web framework
+- `uvicorn`: ASGI server
+- `aio-pika`: Async client for RabbitMQ
+- `httpx`: Async HTTP client for polling and SSE
 
-## Cache In-Memory
+## In-Memory Cache
 
-Il servizio mantiene una cache in-memory:
-- Chiave: `{sensor_id}_{metric}`
-- Valore: ultimo evento normalizzato
-- Accessibile via `/sensors/latest`
-- Utilizzata dal frontend per visualizzazione real-time
+The service maintains an in-memory cache:
+- Key: `{sensor_id}_{metric}`
+- Value: latest normalized event
+- Accessible via `/sensors/latest`
+- Used by frontend for real-time display
 
-## Gestione Errori
+## Error Handling
 
-- Retry automatico per connessioni RabbitMQ (ogni 5 secondi)
-- Retry automatico per connessioni SSE (ogni 5 secondi)
-- Log errori per sensori REST non riconosciuti
-- Continua elaborazione anche in caso di errori su singoli sensori
+- Automatic retry for RabbitMQ connections (every 5 seconds)
+- Automatic retry for SSE connections (every 5 seconds)
+- Error logging for unrecognized REST sensors
+- Continues processing even if individual sensors fail
 
-## Pubblicazione RabbitMQ
+## RabbitMQ Publishing
 
 Routing key: `events.sensor.{sensor_id}`
 
-Esempio: Per `greenhouse_temperature`, pubblica su `events.sensor.greenhouse_temperature`
+Example: For `greenhouse_temperature`, publishes to `events.sensor.greenhouse_temperature`
 
 Exchange: Topic exchange `mars_events` (durable)
 
-I consumer sottoscrivono con pattern come:
-- `events.sensor.#` - Tutti gli eventi sensori
-- `events.#` - Tutti gli eventi
+Consumers subscribe with patterns like:
+- `events.sensor.#` - All sensor events
+- `events.#` - All events

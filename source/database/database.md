@@ -1,74 +1,74 @@
 # Database Service
 
-Servizio di persistenza dati per la Mars Habitat Automation Platform.
+Data persistence service for the Mars Habitat Automation Platform.
 
-## Responsabilità
+## Responsibilities
 
-- Fornisce database PostgreSQL per la persistenza
-- Esegue lo script di inizializzazione allo startup
-- Gestisce la connessione per tutti i servizi backend
+- Provides PostgreSQL database for persistence
+- Executes initialization script at startup
+- Manages connections for all backend services
 
-## Schema del Database
+## Database Schema
 
-### Tabella: automation_rules
+### Table: automation_rules
 
-Definisce le regole di automazione.
+Defines automation rules.
 
-| Campo | Tipo | Vincoli | Descrizione |
-|-------|------|---------|-------------|
-| id | SERIAL | PRIMARY KEY | Identificativo univoco |
-| name | VARCHAR(100) | NOT NULL | Nome della regola |
-| description | TEXT | | Descrizione opzionale |
-| sensor_id | VARCHAR(100) | NOT NULL | ID sensore da monitorare |
-| operator | VARCHAR(10) | NOT NULL, CHECK | Operatore: `<`, `<=`, `=`, `>`, `>=` |
-| threshold_value | DECIMAL(10,2) | NOT NULL | Valore soglia |
-| threshold_unit | VARCHAR(20) | | Unità di misura |
-| actuator_id | VARCHAR(100) | NOT NULL | ID attuatore da controllare |
-| actuator_action | VARCHAR(20) | NOT NULL | Azione: `ON` o `OFF` |
-| is_active | BOOLEAN | DEFAULT TRUE | Regola attiva/disattiva |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Data creazione |
-| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Data ultima modifica |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| name | VARCHAR(100) | NOT NULL | Rule name |
+| description | TEXT | | Optional description |
+| sensor_id | VARCHAR(100) | NOT NULL | Sensor ID to monitor |
+| operator | VARCHAR(10) | NOT NULL, CHECK | Operator: `<`, `<=`, `=`, `>`, `>=` |
+| threshold_value | DECIMAL(10,2) | NOT NULL | Threshold value |
+| threshold_unit | VARCHAR(20) | | Unit of measurement |
+| actuator_id | VARCHAR(100) | NOT NULL | Actuator ID to control |
+| actuator_action | VARCHAR(20) | NOT NULL | Action: `ON` or `OFF` |
+| is_active | BOOLEAN | DEFAULT TRUE | Rule active/inactive |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Creation date |
+| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last update date |
 
-Vincolo CHECK:
+CHECK constraint:
 ```sql
 CONSTRAINT valid_operator CHECK (operator IN ('<', '<=', '=', '>', '>='))
 ```
 
-### Tabella: sensor_readings
+### Table: sensor_readings
 
-Storico delle letture sensori.
+Historical sensor readings.
 
-| Campo | Tipo | Vincoli | Descrizione |
-|-------|------|---------|-------------|
-| id | BIGSERIAL | PRIMARY KEY | Identificativo univoco |
-| sensor_id | VARCHAR(100) | NOT NULL | ID sensore |
-| value | DECIMAL(10,4) | NOT NULL | Valore letto |
-| unit | VARCHAR(20) | | Unità di misura |
-| source | VARCHAR(50) | | Fonte: "rest" o "stream" |
-| recorded_at | TIMESTAMP | NOT NULL | Timestamp della lettura |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Timestamp inserimento DB |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Unique identifier |
+| sensor_id | VARCHAR(100) | NOT NULL | Sensor ID |
+| value | DECIMAL(10,4) | NOT NULL | Read value |
+| unit | VARCHAR(20) | | Unit of measurement |
+| source | VARCHAR(50) | | Source: "rest" or "stream" |
+| recorded_at | TIMESTAMP | NOT NULL | Reading timestamp |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | DB insertion timestamp |
 
-### Tabella: actuator_commands
+### Table: actuator_commands
 
-Audit trail dei comandi eseguiti.
+Audit trail of executed commands.
 
-| Campo | Tipo | Vincoli | Descrizione |
-|-------|------|---------|-------------|
-| id | BIGSERIAL | PRIMARY KEY | Identificativo univoco |
-| actuator_id | VARCHAR(100) | NOT NULL | ID attuatore |
-| previous_state | VARCHAR(20) | | Stato precedente |
-| new_state | VARCHAR(20) | NOT NULL | Nuovo stato |
-| source | VARCHAR(50) | | Fonte: "automation-engine" o "manual" |
-| reason | TEXT | | Motivazione del comando |
-| rule_id | INTEGER | FK → automation_rules.id | ID regola (se automatizzato) |
-| executed_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Timestamp esecuzione |
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Unique identifier |
+| actuator_id | VARCHAR(100) | NOT NULL | Actuator ID |
+| previous_state | VARCHAR(20) | | Previous state |
+| new_state | VARCHAR(20) | NOT NULL | New state |
+| source | VARCHAR(50) | | Source: "automation-engine" or "manual" |
+| reason | TEXT | | Command reason |
+| rule_id | INTEGER | FK → automation_rules.id | Rule ID (if automated) |
+| executed_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Execution timestamp |
 
 Foreign Key:
 ```sql
 rule_id INTEGER REFERENCES automation_rules(id) ON DELETE SET NULL
 ```
 
-## Indici
+## Indexes
 
 ```sql
 CREATE INDEX idx_sensor_readings_sensor_id ON sensor_readings(sensor_id);
@@ -77,16 +77,16 @@ CREATE INDEX idx_automation_rules_active ON automation_rules(is_active);
 CREATE INDEX idx_automation_rules_sensor_id ON automation_rules(sensor_id);
 ```
 
-## Variabili d'Ambiente
+## Environment Variables
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `POSTGRES_USER` | `mars_user` | Nome utente database |
-| `POSTGRES_PASSWORD` | `mars_password` | Password database |
-| `POSTGRES_DB` | `mars_habitat` | Nome database |
-| `PGPORT` | `5432` | Porta interna PostgreSQL |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_USER` | `mars_user` | Database username |
+| `POSTGRES_PASSWORD` | `mars_password` | Database password |
+| `POSTGRES_DB` | `mars_habitat` | Database name |
+| `PGPORT` | `5432` | PostgreSQL internal port |
 
-## Configurazione Docker Compose
+## Docker Compose Configuration
 
 ```yaml
 database:
@@ -109,44 +109,44 @@ database:
     retries: 5
 ```
 
-## Connessione dai Servizi
+## Connection from Services
 
-I servizi backend usano SQLAlchemy async con il driver `asyncpg`:
+Backend services use SQLAlchemy async with the `asyncpg` driver:
 
 ```python
 DATABASE_URL = "postgresql+asyncpg://mars_user:mars_password@database:5432/mars_habitat"
 ```
 
-La porta esterna è 5433, ma i container Docker usano la porta interna 5432.
+The external port is 5433, but Docker containers use the internal port 5432.
 
-## Script di Inizializzazione
+## Initialization Script
 
-Il file `init.sql` viene eseguito automaticamente al primo avvio del container:
-1. Crea le tabelle `automation_rules`, `sensor_readings`, `actuator_commands`
-2. Crea gli indici per performance
-3. (Opzionalmente) inserisce dati seed per testing
+The `init.sql` file is executed automatically at first container startup:
+1. Creates tables `automation_rules`, `sensor_readings`, `actuator_commands`
+2. Creates indexes for performance
+3. (Optionally) inserts seed data for testing
 
-## Volumi Docker
+## Docker Volumes
 
-Il volume `postgres_data` persiste i dati tra riavvii:
-- I dati sopravvivono ai riavvii del container
-- Per resettare il database, rimuovere il volume: `docker volume rm postgres_data`
+The `postgres_data` volume persists data across restarts:
+- Data survives container restarts
+- To reset the database, remove the volume: `docker volume rm postgres_data`
 
-## Backup e Recovery
+## Backup and Recovery
 
-Per esportare il database:
+To export the database:
 ```bash
 docker exec database pg_dump -U mars_user mars_habitat > backup.sql
 ```
 
-Per ripristinare:
+To restore:
 ```bash
 docker exec -i database psql -U mars_user mars_habitat < backup.sql
 ```
 
-## Considerazioni di Performance
+## Performance Considerations
 
-- Indici su `sensor_id` e `recorded_at` per query storiche veloci
-- Indice su `automation_rules.is_active` per caricamento regole attive
-- `BIGSERIAL` per tabelle con alto volume di inserimenti
-- Connection pooling nei servizi backend (pool_size=10, max_overflow=20)
+- Indexes on `sensor_id` and `recorded_at` for fast historical queries
+- Index on `automation_rules.is_active` for loading active rules
+- `BIGSERIAL` for tables with high insert volume
+- Connection pooling in backend services (pool_size=10, max_overflow=20)
