@@ -17,6 +17,7 @@ from typing import Optional
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
 from fastapi import FastAPI, HTTPException, Query
+from collections import deque
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -51,6 +52,10 @@ db_engine = None
 # Write buffer for batched inserts
 write_buffer: list[dict] = []
 buffer_lock = asyncio.Lock()
+
+sensor_cache = deque(maxlen=50)
+cache_lock = asyncio.Lock()
+cache_id_counter = 0
 
 
 async def flush_buffer():
@@ -119,8 +124,15 @@ async def store_event(event: dict):
 
 async def process_event(message: AbstractIncomingMessage):
     """Process an incoming sensor event from RabbitMQ."""
+    global cache_id_counter
     try:
         event = json.loads(message.body.decode())
+        
+        async with cache_lock:
+            cache_id_counter += 1
+            event["_cache_id"] = cache_id_counter
+            sensor_cache.append(event)
+            
         await store_event(event)
         await message.ack()
     except Exception as e:
@@ -226,6 +238,24 @@ async def health_check():
         "service": "data-history-service",
         "database": db_status,
         "stats": stats,
+    }
+
+
+@app.get("/sensors/latest")
+async def get_latest_sensors(last_id: int = Query(default=0)):
+    new_events = []
+    current_last_id = last_id
+    
+    async with cache_lock:
+        for ev in sensor_cache:
+            if ev.get("_cache_id", 0) > last_id:
+                new_events.append(ev)
+                current_last_id = max(current_last_id, ev.get("_cache_id", 0))
+
+    return {
+        "count": len(new_events),
+        "last_id": current_last_id,
+        "events": new_events,
     }
 
 

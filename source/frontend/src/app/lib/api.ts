@@ -125,10 +125,26 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ---- Ingestion ------------------------------------------------------------
+let lastSensorId = 0;
+const cachedSensorsData: Record<string, SensorEvent> = {};
 
-export function fetchSensorsLatest(): Promise<SensorsLatestResponse> {
-  return request<SensorsLatestResponse>('/api/ingestion/sensors/latest');
+export async function fetchSensorsLatest(): Promise<SensorsLatestResponse> {
+  const res = await request<{ last_id: number; count: number; events: SensorEvent[] }>(
+    `/api/history/sensors/latest?last_id=${lastSensorId}`
+  );
+
+  if (res.events && res.events.length > 0) {
+    lastSensorId = res.last_id;
+    for (const ev of res.events) {
+      const key = `${ev.sensor_id}_${ev.metric}`;
+      cachedSensorsData[key] = { ...ev };
+    }
+  }
+
+  return {
+    count: Object.keys(cachedSensorsData).length,
+    sensors: { ...cachedSensorsData },
+  };
 }
 
 // ---- Actuators ------------------------------------------------------------

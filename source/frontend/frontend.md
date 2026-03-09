@@ -48,7 +48,7 @@ frontend/
 
 ### 1. Sensors (`SensorDashboard`)
 - Displays all REST sensors in real time
-- Periodic polling from ingestion service `/sensors/latest` endpoint
+- Periodic polling from data-history service `/sensors/latest` endpoint (aggressive polling)
 - Cards with current value, unit, status
 
 ### 2. Telemetry (`TelemetryPage`)
@@ -82,8 +82,7 @@ frontend/
 
 | Service | Endpoint | Usage |
 |---------|----------|-------|
-| ingestion | `GET /sensors/latest` | Latest sensor values |
-| ingestion | `GET /sensors/latest/{id}` | Specific sensor value |
+| data-history | `GET /sensors/latest` | Latest sensor values via aggressive polling |
 | actuator-control | `GET /actuators` | List actuators |
 | actuator-control | `POST /actuators/{id}` | Manual control |
 | actuator-control | `GET /actuators/{id}/history` | Command history |

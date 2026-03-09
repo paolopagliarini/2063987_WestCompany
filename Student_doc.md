@@ -144,8 +144,8 @@ Single Page Application (SPA).
 
 	| Name | Description | Related Microservice | User Stories |
 	| ---- | ----------- | -------------------- | ------------ |
-	| Sensors | Sensor Dashboard | ingestion | 1, 6, 18, 19, 20 |
-	| Telemetry | Telemetry Page | ingestion | 2, 3 |
+	| Sensors | Sensor Dashboard | data-history-service | 1, 6, 18, 19, 20 |
+	| Telemetry | Telemetry Page | data-history-service | 2, 3 |
 	| Actuators | Actuators Control | actuator-control-service | 4, 5, 15 |
 	| Rule Builder | Create/Edit Rules | rule-manager-service | 9, 11 |
 	| Rules | Rule List | rule-manager-service | 10, 12, 13 |
@@ -253,7 +253,7 @@ PostgreSQL database, RabbitMQ message broker.
 
 #### MICROSERVICE: data-history-service
 - TYPE: backend
-- DESCRIPTION: Subscribes to normalized sensor events from RabbitMQ and persists them to the PostgreSQL database. Exposes a REST API for querying historical readings with filtering, pagination, and aggregation.
+- DESCRIPTION: Subscribes to normalized sensor events from RabbitMQ and persists them to the PostgreSQL database. Exposes a REST API for querying historical readings with filtering, pagination, and aggregation, as well as an aggressive polling endpoint via an in-memory cache for the frontend.
 - PORTS: 8006:8006
 - TECHNOLOGICAL SPECIFICATION:
 Python, FastAPI, aio_pika, asyncpg.
@@ -269,6 +269,7 @@ Event Consumer and API Server.
 	| GET | /history/{sensor_id} | History for specific sensor | 8 |
 	| GET | /history/{sensor_id}/aggregate | Aggregated readings | 8 |
 	| GET | /sensors | List sensors with history | 8 |
+	| GET | /sensors/latest | Aggressive polling endpoint for frontend | 1, 19, 20 |
 
 - DB STRUCTURE:
 
@@ -289,7 +290,7 @@ The container that provides the ingestion service for the system.
 - 8001:8001
 
 ### PERSISTENCE EVALUATION
-Fully stateless, relies only on temporary in-memory caching to serve the latest states quickly.
+Fully stateless, relies only on temporary in-memory caching to serve the latest states locally. frontend no longer polls here.
 
 ### EXTERNAL SERVICES CONNECTIONS
 RabbitMQ message broker, IoT Simulator API & SSE Streams.
@@ -310,8 +311,8 @@ REST Poller, SSE Subscriber, and Event Publisher.
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
 	| GET | /health | Health check | 7 |
-	| GET | /sensors/latest | Return all latest cached sensor readings | 1, 19, 20 |
-	| GET | /sensors/latest/{sensor_id} | Return latest reading for a sensor | 1, 19 |
+	| GET | /sensors/latest | Return all latest cached sensor readings (internal use) | - |
+	| GET | /sensors/latest/{sensor_id} | Return latest reading for a sensor (internal use) | - |
 
 ## CONTAINER_NAME: notification-service
 
