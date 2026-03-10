@@ -41,8 +41,11 @@ The container that provides the PostgreSQL database for the system.
 12. As an operator, I want to delete an automation rule, so that I can remove outdated or incorrect automations.
 13. As an operator, I want to enable or disable a rule without deleting it, so that I can temporarily suspend an automation and re-enable it later.
 
-### PORTS: 
+### PORTS:
 - 5433:5432
+
+### DESCRIPTION:
+PostgreSQL 16 relational database initialised via init.sql on first startup. Stores automation rules, sensor historical readings, and actuator command history. Data is persisted through a named Docker volume (postgres_data).
 
 ### PERSISTENCE EVALUATION
 The data stored in the container are the automation rules, sensor historical data, and actuator command execution history, which are persisted in a PostgreSQL database through a volume (`postgres_data`) so they survive service restarts.
@@ -72,9 +75,12 @@ The container that provides the RabbitMQ message broker for the system.
 14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event, so that the habitat is protected without manual intervention.
 16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered, so that I am immediately aware of critical environmental changes without having to watch every sensor.
 
-### PORTS: 
+### PORTS:
 - 5672:5672 (AMQP)
 - 15672:15672 (Management UI)
+
+### DESCRIPTION:
+RabbitMQ 3 message broker configured with a topic exchange (`mars_events`). Routes normalised sensor events to downstream consumers and actuator commands to the actuator control service. Management UI available on port 15672.
 
 ### PERSISTENCE EVALUATION
 The configurations and durable queues of RabbitMQ are persisted using the `rabbitmq_data` volume to protect queued events from data loss.
@@ -120,8 +126,11 @@ The container that provides the frontend for the system.
 19. As an operator, I want to see all individual measurements from multi-metric sensors displayed together (e.g. PM1, PM2.5, PM10 from air_quality_pm25), so that I have complete information from each device in one place.
 20. As an operator, I want to see the connectivity status of each data source (online / offline / degraded), so that I can detect if a sensor or telemetry stream has stopped sending data.
 
-### PORTS: 
+### PORTS:
 - 5173:80
+
+### DESCRIPTION:
+React 18 single-page application served via Vite dev server (development) or Nginx (production). Communicates exclusively with backend microservices via REST polling (5 s interval) and a persistent SSE connection for real-time notifications.
 
 ### PERSISTENCE EVALUATION
 No data is persisted by this container. It acts completely statelessly as a user interface.
@@ -162,8 +171,11 @@ The container that provides the actuator control service for the system.
 14. As an operator, I want the actuator state to change automatically when a rule condition is triggered...
 15. As an operator, I want to see when each actuator was last changed and whether the change was triggered manually or by a rule...
 
-### PORTS: 
+### PORTS:
 - 8005:8005
+
+### DESCRIPTION:
+Python/FastAPI service that subscribes to RabbitMQ actuator commands, calls the IoT simulator REST API to execute them, and logs every command to PostgreSQL. Also exposes a REST API for manual actuator control and state inspection by the frontend.
 
 ### PERSISTENCE EVALUATION
 The service itself is stateless and maintains an in-memory cache, but logs all commands directly to the PostgreSQL database for persistent history.
@@ -204,8 +216,11 @@ The container that provides the automation engine for the system.
 ### USER STORIES:
 14. As an operator, I want the actuator state to change automatically when a rule condition is triggered by an incoming sensor event, so that the habitat is protected without manual intervention.
 
-### PORTS: 
+### PORTS:
 - 8002:8002
+
+### DESCRIPTION:
+Python/FastAPI service that consumes normalised sensor events from RabbitMQ, evaluates all active automation rules loaded from PostgreSQL, and publishes actuator commands when a rule condition is met. Rules are cached in memory and reloaded every 30 seconds or on demand.
 
 ### PERSISTENCE EVALUATION
 Stateless component. It caches rules in memory but loads them from the PostgreSQL database on startup and at interval reloads.
@@ -240,8 +255,11 @@ The container that provides the data history service for the system.
 ### USER STORIES:
 8. As an operator, I want to see a live time chart of a sensor's values while the page is open, so that I can observe trends over time.
 
-### PORTS: 
+### PORTS:
 - 8006:8006
+
+### DESCRIPTION:
+Python/FastAPI service that subscribes to normalised sensor events from RabbitMQ and persists them to PostgreSQL. Exposes a REST API for historical queries (filtering, pagination, aggregation) and a high-frequency polling endpoint backed by an in-memory cache for the frontend dashboard.
 
 ### PERSISTENCE EVALUATION
 Acts as the writer to persist data: it stores normalized sensor events into the PostgreSQL database.
@@ -286,8 +304,11 @@ The container that provides the ingestion service for the system.
 19. As an operator, I want to see all individual measurements from multi-metric sensors displayed together (e.g. PM1, PM2.5, PM10 from air_quality_pm25), so that I have complete information from each device in one place.
 20. As an operator, I want to see the connectivity status of each data source (online / offline / degraded), so that I can detect if a sensor or telemetry stream has stopped sending data.
 
-### PORTS: 
+### PORTS:
 - 8001:8001
+
+### DESCRIPTION:
+Python/FastAPI service that polls REST sensors every 10 seconds and subscribes to 7 SSE telemetry topics. Normalises all incoming payloads into the unified 9-field event schema and publishes them to the RabbitMQ topic exchange. Maintains an in-memory cache of the latest reading per sensor.
 
 ### PERSISTENCE EVALUATION
 Fully stateless, relies only on temporary in-memory caching to serve the latest states locally. frontend no longer polls here.
@@ -323,8 +344,11 @@ The container that provides the notification service for the system.
 16. As an operator, I want to receive a real-time visual alert on the dashboard when a rule is triggered, so that I am immediately aware of critical environmental changes without having to watch every sensor.
 17. As an operator, I want to see a log of the most recent rule-trigger events (which rule fired, when, and what sensor value caused it), so that I can audit the system's automated behavior.
 
-### PORTS: 
+### PORTS:
 - 8004:8004
+
+### DESCRIPTION:
+Python/FastAPI service that consumes sensor events from RabbitMQ, generates notifications for warning-level readings, and pushes them to connected frontend clients via SSE. Stores the last 100 notifications in memory for new client connections.
 
 ### PERSISTENCE EVALUATION
 Caches the last 100 notifications in-memory only. No long-term persistence implemented directly here.
