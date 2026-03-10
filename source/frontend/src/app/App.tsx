@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { SensorDashboard } from './components/SensorDashboard';
 import { TelemetryPage } from './components/TelemetryPage';
 import { ActuatorsControl } from './components/ActuatorsControl';
 import { RuleBuilder } from './components/RuleBuilder';
 import { RuleList } from './components/RuleList';
 import { SystemStatus } from './components/SystemStatus';
+import { NOTIFICATIONS_STREAM_URL, type Notification } from '@/app/lib/api';
 
 const tabs = [
   { id: 'sensors', label: 'Sensors' },
@@ -25,6 +26,25 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('currentPage', currentPage);
   }, [currentPage]);
+
+  useEffect(() => {
+    const es = new EventSource(NOTIFICATIONS_STREAM_URL);
+
+    es.onmessage = (event) => {
+      try {
+        const notification: Notification = JSON.parse(event.data);
+        if (notification.severity === 'critical') {
+          toast.error(notification.message);
+        } else if (notification.severity === 'warning') {
+          toast.warning(notification.message);
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    return () => es.close();
+  }, []);
 
   const handleEditRule = (rule: any) => {
     setEditingRule(rule);
@@ -77,8 +97,8 @@ export default function App() {
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${currentPage === tab.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted'
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-muted'
                 }`}
             >
               {tab.label}

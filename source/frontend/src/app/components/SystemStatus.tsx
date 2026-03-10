@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
 import { usePolling } from '@/app/hooks/usePolling';
 import {
   fetchSensorsLatest,
@@ -12,9 +11,7 @@ import {
   fetchNotificationsHealth,
   fetchActuatorsHealth,
   fetchHistoryHealth,
-  NOTIFICATIONS_STREAM_URL,
   formatSensorName,
-  type Notification,
 } from '@/app/lib/api';
 
 // ---------------------------------------------------------------------------
@@ -82,27 +79,6 @@ export function SystemStatus() {
     checkHealth();
     const id = setInterval(checkHealth, 15_000);
     return () => clearInterval(id);
-  }, []);
-
-  // ---- SSE alerts (US16) --------------------------------------------------
-
-  useEffect(() => {
-    const es = new EventSource(NOTIFICATIONS_STREAM_URL);
-
-    es.onmessage = (event) => {
-      try {
-        const notification: Notification = JSON.parse(event.data);
-        if (notification.severity === 'critical') {
-          toast.error(notification.message);
-        } else if (notification.severity === 'warning') {
-          toast.warning(notification.message);
-        }
-      } catch {
-        // ignore malformed messages
-      }
-    };
-
-    return () => es.close();
   }, []);
 
   // ---- Notifications log (US17) -------------------------------------------
