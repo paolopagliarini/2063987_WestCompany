@@ -180,7 +180,7 @@ def add_footer_line(slide):
     line.line.fill.background()
 
 
-TOTAL_SLIDES = 22
+TOTAL_SLIDES = 24
 
 # ============================================================================
 # SLIDE 1: Title Slide (Hero)
@@ -377,7 +377,7 @@ add_text_box(slide, 0.8, 0.4, 11.7, 0.7,
 add_accent_bar(slide, 0.8, 1.05, 0.12, 0.5)
 
 # Add architecture diagram
-diagram_path = "/home/daniel/Scrivania/WestCompany/booklets/diagrams/asset/Diagram.png"
+diagram_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "diagrams", "asset/Diagram.png")
 if os.path.exists(diagram_path):
     slide.shapes.add_picture(diagram_path, Inches(0.5), Inches(1.5), width=Inches(12.3))
 
@@ -560,7 +560,104 @@ add_text_box(slide, 1.0, 5.6, 11.3, 0.9,
 add_slide_number(slide, 8, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 9: Automation Engine
+# SLIDE 9: Raw Data to JSON (Normalization)
+# ============================================================================
+slide = prs.slides.add_slide(prs.slide_layouts[6])
+add_background(slide, COLORS['background'])
+
+add_text_box(slide, 0.8, 0.4, 11.7, 0.7,
+             "Raw Data to JSON (Normalization)",
+             font_size=TYPOGRAPHY['section_title'], font_color=COLORS['primary'], bold=True)
+
+add_accent_bar(slide, 0.8, 1.05, 0.12, 0.5)
+
+add_text_box(slide, 0.8, 1.6, 11.7, 0.5,
+             "Standardizing Telemetry and Events",
+             font_size=TYPOGRAPHY['body_large'], font_color=COLORS['accent'], bold=True)
+
+# Example box 1: Raw payload
+add_card(slide, 0.8, 2.3, 5.0, 4.0, border_color=COLORS['error'])
+add_text_box(slide, 1.0, 2.5, 4.6, 0.4, "Raw Telemetry (Varies)", font_size=TYPOGRAPHY['body'], font_color=COLORS['error'], bold=True)
+raw_json = '''{
+  "sensor": "DHT22",
+  "data": {
+    "temp": 39.99,
+    "flow": 12.0
+  }
+}'''
+add_text_box(slide, 1.0, 3.1, 4.6, 2.5, raw_json, font_size=TYPOGRAPHY['body_small'], font_color=COLORS['secondary'], font_name='Courier New')
+
+# Arrow pointing right
+arrow = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, Inches(6.1), Inches(3.8), Inches(0.8), Inches(0.5))
+arrow.fill.solid()
+arrow.fill.fore_color.rgb = COLORS['accent_alt']
+
+# Example box 2: Unified format
+add_card(slide, 7.2, 2.3, 5.3, 4.0, border_color=COLORS['success'])
+add_text_box(slide, 7.4, 2.5, 4.6, 0.4, "Unified Event JSON", font_size=TYPOGRAPHY['body'], font_color=COLORS['success'], bold=True)
+unified_json = '''{
+  "event_id": "evt_101",
+  "sensor_id": "thermal_loop",
+  "timestamp": "2026-03-10T12:00:00Z",
+  "metric": "temperature_c",
+  "value": 39.99,
+  "unit": "C",
+  "source": "sse",
+  "status": "warning"
+}'''
+add_text_box(slide, 7.4, 3.1, 4.8, 3.2, unified_json, font_size=TYPOGRAPHY['body_small'], font_color=COLORS['primary'], font_name='Courier New')
+
+add_slide_number(slide, 9, TOTAL_SLIDES)
+
+# ============================================================================
+# SLIDE 10: In-Memory Cache & Event Mapping
+# ============================================================================
+slide = prs.slides.add_slide(prs.slide_layouts[6])
+add_background(slide, COLORS['background'])
+
+add_text_box(slide, 0.8, 0.4, 11.7, 0.7,
+             "In-Memory Cache & Mapping",
+             font_size=TYPOGRAPHY['section_title'], font_color=COLORS['primary'], bold=True)
+
+add_accent_bar(slide, 0.8, 1.05, 0.12, 0.5)
+
+# The cache explanation
+add_text_box(slide, 0.8, 1.5, 11.7, 0.8,
+             "Ingestion service maintains the latest values for every sensor, exposed via GET /sensors/latest\nto the frontend with real-time updates.",
+             font_size=TYPOGRAPHY['body_large'], font_color=COLORS['primary'])
+
+# Mapping Details
+add_card(slide, 0.8, 2.6, 11.7, 4.2, border_color=COLORS['accent'])
+add_text_box(slide, 1.2, 2.8, 10.9, 0.5, "Event Mapping Strategies", font_size=TYPOGRAPHY['body'], font_color=COLORS['accent'], bold=True)
+
+mappings = [
+    "rest.scalar.v1 -> 1 direct event (1:1 mapping)",
+    "rest.chemistry.v1 -> 1 event per measurement in the measurements array",
+    "rest.particulate.v1 -> 3 separated events (PM1, PM2.5, PM10)",
+    "rest.level.v1 -> 2 events (level_pct in % and level_liters in L)",
+    "topic.power.v1 / environment.v1 -> 1 event per metric",
+    "topic.thermal_loop.v1 -> 2 events (temperature_c, flow_l_min)",
+    "topic.airlock.v1 -> 1 event (last_state encoded as status)"
+]
+
+y_pos = 3.5
+for m in mappings:
+    parts = m.split("->")
+    if len(parts) == 2:
+        schema = parts[0].strip()
+        mapping = parts[1].strip()
+        # draw small rectangle for schema
+        add_text_box(slide, 1.2, y_pos, 4.3, 0.4, schema, font_size=TYPOGRAPHY['body_small'], font_color=COLORS['warning'], font_name='Courier New')
+        # arrow symbol ->
+        add_text_box(slide, 5.6, y_pos, 0.5, 0.4, "→", font_size=TYPOGRAPHY['body_small'], font_color=COLORS['secondary'])
+        # mapping text
+        add_text_box(slide, 6.1, y_pos, 6.0, 0.4, mapping, font_size=TYPOGRAPHY['body_small'], font_color=COLORS['secondary'])
+    y_pos += 0.43
+
+add_slide_number(slide, 10, TOTAL_SLIDES)
+
+# ============================================================================
+# SLIDE 11: Automation Engine
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -640,10 +737,10 @@ add_text_box(slide, 1.0, 5.7, 11.3, 0.8,
              font_size=TYPOGRAPHY['body_small'], font_color=COLORS['secondary'],
              alignment=PP_ALIGN.CENTER)
 
-add_slide_number(slide, 9, TOTAL_SLIDES)
+add_slide_number(slide, 11, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 10: Frontend Overview
+# SLIDE 12: Frontend Overview
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -711,10 +808,10 @@ add_text_box(slide, 1.0, 5.4, 11.3, 1.0,
              font_size=TYPOGRAPHY['body_small'], font_color=COLORS['secondary'],
              alignment=PP_ALIGN.CENTER)
 
-add_slide_number(slide, 10, TOTAL_SLIDES)
+add_slide_number(slide, 12, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 11: Sensors Dashboard (Mockup)
+# SLIDE 13: Sensors Dashboard (Mockup)
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -730,14 +827,14 @@ add_text_box(slide, 2, 0.3, 10, 0.5,
              font_size=TYPOGRAPHY['caption'], font_color=COLORS['muted'])
 
 # Add mockup image
-mockup_path = "/home/daniel/Scrivania/WestCompany/booklets/mockups/01 Sensors.png"
+mockup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mockups", "01 Sensors.png")
 if os.path.exists(mockup_path):
     slide.shapes.add_picture(mockup_path, Inches(0.5), Inches(1.2), width=Inches(12.3))
 
-add_slide_number(slide, 11, TOTAL_SLIDES)
+add_slide_number(slide, 13, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 12: Telemetry Page (Mockup)
+# SLIDE 14: Telemetry Page (Mockup)
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -752,14 +849,14 @@ add_text_box(slide, 2.8, 0.3, 10, 0.5,
              "SSE-powered live data visualization",
              font_size=TYPOGRAPHY['caption'], font_color=COLORS['muted'])
 
-mockup_path = "/home/daniel/Scrivania/WestCompany/booklets/mockups/02 Telemetry.png"
+mockup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mockups", "02 Telemetry.png")
 if os.path.exists(mockup_path):
     slide.shapes.add_picture(mockup_path, Inches(0.5), Inches(1.2), width=Inches(12.3))
 
-add_slide_number(slide, 12, TOTAL_SLIDES)
+add_slide_number(slide, 14, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 13: Actuators Page (Mockup)
+# SLIDE 15: Actuators Page (Mockup)
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -774,14 +871,14 @@ add_text_box(slide, 2.5, 0.3, 10, 0.5,
              "Manual control and command history audit trail",
              font_size=TYPOGRAPHY['caption'], font_color=COLORS['muted'])
 
-mockup_path = "/home/daniel/Scrivania/WestCompany/booklets/mockups/03 Actuators.png"
+mockup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mockups", "03 Actuators.png")
 if os.path.exists(mockup_path):
     slide.shapes.add_picture(mockup_path, Inches(0.5), Inches(1.2), width=Inches(12.3))
 
-add_slide_number(slide, 13, TOTAL_SLIDES)
+add_slide_number(slide, 15, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 14: Rule Builder Page (Mockup)
+# SLIDE 16: Rule Builder Page (Mockup)
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -796,14 +893,14 @@ add_text_box(slide, 2.3, 0.3, 10, 0.5,
              "Create IF-THEN automation rules visually",
              font_size=TYPOGRAPHY['caption'], font_color=COLORS['muted'])
 
-mockup_path = "/home/daniel/Scrivania/WestCompany/booklets/mockups/04 rule Builder.png"
+mockup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mockups", "04 rule Builder.png")
 if os.path.exists(mockup_path):
     slide.shapes.add_picture(mockup_path, Inches(0.5), Inches(1.2), width=Inches(12.3))
 
-add_slide_number(slide, 14, TOTAL_SLIDES)
+add_slide_number(slide, 16, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 15: Rules Page (Mockup)
+# SLIDE 17: Rules Page (Mockup)
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -818,14 +915,14 @@ add_text_box(slide, 2.8, 0.3, 10, 0.5,
              "List, toggle, edit, and delete automation rules",
              font_size=TYPOGRAPHY['caption'], font_color=COLORS['muted'])
 
-mockup_path = "/home/daniel/Scrivania/WestCompany/booklets/mockups/05 Rules.png"
+mockup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mockups", "05 Rules.png")
 if os.path.exists(mockup_path):
     slide.shapes.add_picture(mockup_path, Inches(0.5), Inches(1.2), width=Inches(12.3))
 
-add_slide_number(slide, 15, TOTAL_SLIDES)
+add_slide_number(slide, 17, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 16: Status Page (Mockup)
+# SLIDE 18: Status Page (Mockup)
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -840,14 +937,14 @@ add_text_box(slide, 2.3, 0.3, 10, 0.5,
              "Health monitoring and notification center",
              font_size=TYPOGRAPHY['caption'], font_color=COLORS['muted'])
 
-mockup_path = "/home/daniel/Scrivania/WestCompany/booklets/mockups/06 Status.png"
+mockup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mockups", "06 Status.png")
 if os.path.exists(mockup_path):
     slide.shapes.add_picture(mockup_path, Inches(0.5), Inches(1.2), width=Inches(12.3))
 
-add_slide_number(slide, 16, TOTAL_SLIDES)
+add_slide_number(slide, 18, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 17: Database Schema
+# SLIDE 19: Database Schema
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -919,10 +1016,10 @@ for i, (name, color, fields) in enumerate(tables):
                      font_color=COLORS['secondary'])
         y_pos += 0.38
 
-add_slide_number(slide, 17, TOTAL_SLIDES)
+add_slide_number(slide, 19, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 18: Data Flow
+# SLIDE 20: Data Flow
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -1001,10 +1098,10 @@ for name, pattern, color in event_types:
                  font_color=COLORS['muted'])
     x_pos += 4
 
-add_slide_number(slide, 18, TOTAL_SLIDES)
+add_slide_number(slide, 20, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 19: Technology Stack
+# SLIDE 21: Technology Stack
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -1088,10 +1185,10 @@ add_text_box(slide, 9.2, 4.7, 3.4, 1.8,
              font_size=TYPOGRAPHY['body_small'], font_color=COLORS['muted'],
              alignment=PP_ALIGN.CENTER)
 
-add_slide_number(slide, 19, TOTAL_SLIDES)
+add_slide_number(slide, 21, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 20: User Stories Summary
+# SLIDE 22: User Stories Summary
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -1162,10 +1259,10 @@ for i, (cat, color, stories) in enumerate(categories):
                      font_color=COLORS['secondary'])
         y_pos += 0.65
 
-add_slide_number(slide, 20, TOTAL_SLIDES)
+add_slide_number(slide, 22, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 21: Conclusions
+# SLIDE 23: Conclusions
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -1227,10 +1324,10 @@ for title, desc in future:
                  font_color=COLORS['muted'])
     y_pos += 0.4
 
-add_slide_number(slide, 21, TOTAL_SLIDES)
+add_slide_number(slide, 23, TOTAL_SLIDES)
 
 # ============================================================================
-# SLIDE 22: Thank You
+# SLIDE 24: Thank You
 # ============================================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 add_background(slide, COLORS['background'])
@@ -1279,10 +1376,10 @@ add_text_box(slide, 0.8, 6.3, 11.7, 0.4,
              font_size=TYPOGRAPHY['caption'], font_color=COLORS['muted'],
              alignment=PP_ALIGN.CENTER)
 
-add_slide_number(slide, 22, TOTAL_SLIDES)
+add_slide_number(slide, 24, TOTAL_SLIDES)
 
 # Save presentation
-output_path = "/home/daniel/Scrivania/WestCompany/Mars_Habitat_Presentation.pptx"
+output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Mars_Habitat_Presentation.pptx")
 prs.save(output_path)
 print(f"✅ Presentation saved to: {output_path}")
 print(f"📊 Total slides: {len(prs.slides)}")
