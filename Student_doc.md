@@ -271,7 +271,7 @@ PostgreSQL database, RabbitMQ message broker.
 
 #### MICROSERVICE: data-history-service
 - TYPE: backend
-- DESCRIPTION: Subscribes to normalized sensor events from RabbitMQ and persists them to the PostgreSQL database. Exposes a REST API for querying historical readings with filtering, pagination, and aggregation, as well as an aggressive polling endpoint via an in-memory cache for the frontend.
+- DESCRIPTION: Subscribes to normalized sensor events from RabbitMQ and persists them to the PostgreSQL database. Exposes a REST API for querying historical readings with filtering, pagination, and aggregation, as well as a dual-mode endpoint (`/sensors/latest`) for the frontend: it serves a full state snapshot on initial load (bootstrap), and an aggressive polling mechanism via an in-memory queue for subsequent delta updates.
 - PORTS: 8006:8006
 - TECHNOLOGICAL SPECIFICATION:
 Python, FastAPI, aio_pika, asyncpg.
@@ -287,7 +287,7 @@ Event Consumer and API Server.
 	| GET | /history/{sensor_id} | History for specific sensor | 8 |
 	| GET | /history/{sensor_id}/aggregate | Aggregated readings | 8 |
 	| GET | /sensors | List sensors with history | 8 |
-	| GET | /sensors/latest | Aggressive polling endpoint for frontend | 1, 19, 20 |
+	| GET | /sensors/latest | Returns a complete snapshot (last_id=0) or only new delta updates for aggressive polling | 1, 19, 20 |
 
 - DB STRUCTURE:
 
@@ -351,7 +351,7 @@ The container that provides the notification service for the system.
 Python/FastAPI service that consumes sensor events from RabbitMQ, generates notifications for warning-level readings, and pushes them to connected frontend clients via SSE. Stores the last 100 notifications in memory for new client connections.
 
 ### PERSISTENCE EVALUATION
-Caches the last 100 notifications in-memory only. No long-term persistence implemented directly here.
+Caches the last 100 alerts (warnings, criticals, and rule-triggered events) in-memory only, ignoring normal telemetry. No long-term persistence implemented directly here.
 
 ### EXTERNAL SERVICES CONNECTIONS
 RabbitMQ message broker.
